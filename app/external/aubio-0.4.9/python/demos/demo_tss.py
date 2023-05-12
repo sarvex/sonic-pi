@@ -5,7 +5,9 @@ from aubio import source, sink, pvoc, tss
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        print('usage: %s <inputfile> <outputfile_transient> <outputfile_steady>' % sys.argv[0])
+        print(
+            f'usage: {sys.argv[0]} <inputfile> <outputfile_transient> <outputfile_steady>'
+        )
         sys.exit(1)
 
     samplerate = 44100

@@ -41,12 +41,11 @@ class PriorityTasks(object):
 		if self.lst:
 			for x in lst:
 				self.append(x)
+		elif isinstance(lst,list):
+			self.lst=lst
+			heapq.heapify(lst)
 		else:
-			if isinstance(lst,list):
-				self.lst=lst
-				heapq.heapify(lst)
-			else:
-				self.lst=lst.lst
+			self.lst=lst.lst
 class Consumer(Utils.threading.Thread):
 	def __init__(self,spawner,task):
 		Utils.threading.Thread.__init__(self)
@@ -103,9 +102,7 @@ class Parallel(object):
 		if self.numjobs>1:
 			self.spawner=Spawner(self)
 	def get_next_task(self):
-		if not self.outstanding:
-			return None
-		return self.outstanding.pop()
+		return None if not self.outstanding else self.outstanding.pop()
 	def postpone(self,tsk):
 		self.postponed.append(tsk)
 	def refill_task_list(self):
@@ -129,7 +126,9 @@ class Parallel(object):
 							lst.append('%s\t-> %r'%(repr(tsk),deps))
 							if not deps:
 								lst.append('\n  task %r dependencies are done, check its *runnable_status*?'%id(tsk))
-						raise Errors.WafError('Deadlock detected: check the task build order%s'%''.join(lst))
+						raise Errors.WafError(
+							f"Deadlock detected: check the task build order{''.join(lst)}"
+						)
 				self.deadlock=self.processed
 			if self.postponed:
 				self.outstanding.extend(self.postponed)
@@ -156,27 +155,27 @@ class Parallel(object):
 					self.total=self.bld.total()
 					break
 	def add_more_tasks(self,tsk):
-		if getattr(tsk,'more_tasks',None):
-			more=set(tsk.more_tasks)
-			groups_done=set()
-			def iteri(a,b):
-				for x in a:
-					yield x
-				for x in b:
-					yield x
-			for x in iteri(self.outstanding,self.incomplete):
-				for k in x.run_after:
-					if isinstance(k,Task.TaskGroup):
-						if k not in groups_done:
-							groups_done.add(k)
-							for j in k.prev&more:
-								self.revdeps[j].add(k)
-					elif k in more:
-						self.revdeps[k].add(x)
-			ready,waiting=self.prio_and_split(tsk.more_tasks)
-			self.outstanding.extend(ready)
-			self.incomplete.update(waiting)
-			self.total+=len(tsk.more_tasks)
+		if not getattr(tsk, 'more_tasks', None):
+			return
+		more=set(tsk.more_tasks)
+		groups_done=set()
+		def iteri(a,b):
+			yield from a
+			yield from b
+
+		for x in iteri(self.outstanding,self.incomplete):
+			for k in x.run_after:
+				if isinstance(k,Task.TaskGroup):
+					if k not in groups_done:
+						groups_done.add(k)
+						for j in k.prev&more:
+							self.revdeps[j].add(k)
+				elif k in more:
+					self.revdeps[k].add(x)
+		ready,waiting=self.prio_and_split(tsk.more_tasks)
+		self.outstanding.extend(ready)
+		self.incomplete.update(waiting)
+		self.total+=len(tsk.more_tasks)
 	def mark_finished(self,tsk):
 		def try_unfreeze(x):
 			if x in self.incomplete:
@@ -258,9 +257,8 @@ class Parallel(object):
 					if Logs.verbose>1 or not self.error:
 						self.error.append(tsk)
 					self.stop=True
-				else:
-					if Logs.verbose>1:
-						self.error.append(tsk)
+				elif Logs.verbose>1:
+					self.error.append(tsk)
 				return Task.EXCEPTION
 			tsk.hasrun=Task.EXCEPTION
 			self.error_handler(tsk)
@@ -366,6 +364,9 @@ class Parallel(object):
 					lst.append(repr(tsk))
 					if tsk is n:
 						break
-				raise Errors.WafError('Task dependency cycle in "run_after" constraints: %s'%''.join(lst))
+				raise Errors.WafError(
+					f"""Task dependency cycle in "run_after" constraints: {''.join(lst)}"""
+				)
+
 		for x in tasks:
 			visit(x,[])

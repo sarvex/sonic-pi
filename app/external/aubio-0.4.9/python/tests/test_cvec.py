@@ -34,7 +34,7 @@ class aubio_cvec_test_case(TestCase):
     def test_assign_cvec_norm_slice(self):
         spec = cvec(1024)
         spec.norm[40:100] = 100
-        assert_equal(spec.norm[0:40], 0)
+        assert_equal(spec.norm[:40], 0)
         assert_equal(spec.norm[40:100], 100)
         assert_equal(spec.norm[100:-1], 0)
         assert_equal(spec.phas, 0)
@@ -42,7 +42,7 @@ class aubio_cvec_test_case(TestCase):
     def test_assign_cvec_phas_slice(self):
         spec = cvec(1024)
         spec.phas[39:-1] = -np.pi
-        assert_equal(spec.phas[0:39], 0)
+        assert_equal(spec.phas[:39], 0)
         assert_equal(spec.phas[39:-1], -np.pi)
         assert_equal(spec.norm, 0)
 

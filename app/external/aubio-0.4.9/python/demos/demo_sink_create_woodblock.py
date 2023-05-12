@@ -6,12 +6,10 @@ from aubio import sink, float_type
 from numpy import arange, sin, exp, zeros
 
 if len(sys.argv) < 2:
-    print('usage: %s <outputfile> [samplerate]' % sys.argv[0])
+    print(f'usage: {sys.argv[0]} <outputfile> [samplerate]')
     sys.exit(1)
 
-samplerate = 44100 # samplerate in Hz
-if len( sys.argv ) > 2: samplerate = int(sys.argv[2])
-
+samplerate = int(sys.argv[2]) if len( sys.argv ) > 2 else 44100
 pitch = 2200            # in Hz
 blocksize = 256         # in samples
 duration = 0.02         # in seconds
@@ -32,7 +30,7 @@ sinetone = zeros((duration,), dtype = float_type)
 # compute sinetone at floating point period
 for i in range(duration):
     x = int((i % period) / float(period) * tablelen)
-    idx = int(x)
+    idx = x
     frac = x - idx
     a = sinetable[idx]
     b = sinetable[idx + 1]
@@ -43,10 +41,9 @@ float_ramp = arange(duration, dtype = float_type)
 sinetone *= exp( - e * float_ramp / duration / decay)
 sinetone[:attack] *= exp( e * ( float_ramp[:attack] / attack - 1 ) )
 
-if 1:
-    import matplotlib.pyplot as plt
-    plt.plot(sinetone)
-    plt.show()
+import matplotlib.pyplot as plt
+plt.plot(sinetone)
+plt.show()
 
 my_sink = sink(sys.argv[1], samplerate)
 

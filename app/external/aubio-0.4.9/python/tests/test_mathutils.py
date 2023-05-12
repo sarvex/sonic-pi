@@ -10,8 +10,8 @@ from math import pi
 class aubio_mathutils(TestCase):
 
     def test_unwrap2pi(self):
-        unwrap2pi(int(23))
-        unwrap2pi(float(23.))
+        unwrap2pi(23)
+        unwrap2pi(23.0)
         unwrap2pi(int(23.))
         unwrap2pi(arange(10))
         unwrap2pi(arange(10).astype("int"))

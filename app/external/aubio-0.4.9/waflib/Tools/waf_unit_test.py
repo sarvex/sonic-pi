@@ -18,8 +18,7 @@ sys.exit(status)
 """
 @taskgen_method
 def handle_ut_cwd(self,key):
-	cwd=getattr(self,key,None)
-	if cwd:
+	if cwd := getattr(self, key, None):
 		if isinstance(cwd,str):
 			if os.path.isabs(cwd):
 				self.ut_cwd=self.bld.root.make_node(cwd)
@@ -27,9 +26,9 @@ def handle_ut_cwd(self,key):
 				self.ut_cwd=self.path.make_node(cwd)
 @feature('test_scripts')
 def make_interpreted_test(self):
-	for x in['test_scripts_source','test_scripts_template']:
+	for x in ['test_scripts_source','test_scripts_template']:
 		if not hasattr(self,x):
-			Logs.warn('a test_scripts taskgen i missing %s'%x)
+			Logs.warn(f'a test_scripts taskgen i missing {x}')
 			return
 	self.ut_run,lst=Task.compile_fun(self.test_scripts_template,shell=getattr(self,'test_scripts_shell',False))
 	script_nodes=self.to_nodes(self.test_scripts_source)
@@ -38,8 +37,7 @@ def make_interpreted_test(self):
 		tsk.vars=lst+tsk.vars
 		tsk.env['SCRIPT']=script_node.path_from(tsk.get_cwd())
 	self.handle_ut_cwd('test_scripts_cwd')
-	env=getattr(self,'test_scripts_env',None)
-	if env:
+	if env := getattr(self, 'test_scripts_env', None):
 		self.ut_env=env
 	else:
 		self.ut_env=dict(os.environ)
@@ -103,9 +101,8 @@ class utest(Task.Task):
 		if getattr(Options.options,'no_tests',False):
 			return Task.SKIP_ME
 		ret=super(utest,self).runnable_status()
-		if ret==Task.SKIP_ME:
-			if getattr(Options.options,'all_tests',False):
-				return Task.RUN_ME
+		if ret == Task.SKIP_ME and getattr(Options.options, 'all_tests', False):
+			return Task.RUN_ME
 		return ret
 	def get_test_env(self):
 		return self.generator.ut_env
@@ -117,15 +114,14 @@ class utest(Task.Task):
 		if hasattr(self.generator,'ut_run'):
 			return self.generator.ut_run(self)
 		self.ut_exec=getattr(self.generator,'ut_exec',[self.inputs[0].abspath()])
-		ut_cmd=getattr(self.generator,'ut_cmd',False)
-		if ut_cmd:
+		if ut_cmd := getattr(self.generator, 'ut_cmd', False):
 			self.ut_exec=shlex.split(ut_cmd%' '.join(self.ut_exec))
 		return self.exec_command(self.ut_exec)
 	def exec_command(self,cmd,**kw):
 		self.generator.bld.log_command(cmd,kw)
 		if getattr(Options.options,'dump_test_scripts',False):
 			script_code=SCRIPT_TEMPLATE%{'python':sys.executable,'env':self.get_test_env(),'cwd':self.get_cwd().abspath(),'cmd':cmd}
-			script_file=self.inputs[0].abspath()+'_run.py'
+			script_file = f'{self.inputs[0].abspath()}_run.py'
 			Utils.writef(script_file,script_code)
 			os.chmod(script_file,Utils.O755)
 			if Logs.verbose>1:
@@ -141,28 +137,28 @@ class utest(Task.Task):
 	def get_cwd(self):
 		return getattr(self.generator,'ut_cwd',self.inputs[0].parent)
 def summary(bld):
-	lst=getattr(bld,'utest_results',[])
-	if lst:
-		Logs.pprint('CYAN','execution summary')
-		total=len(lst)
-		tfail=len([x for x in lst if x[1]])
-		Logs.pprint('GREEN','  tests that pass %d/%d'%(total-tfail,total))
-		for(f,code,out,err)in lst:
-			if not code:
-				Logs.pprint('GREEN','    %s'%f)
-		Logs.pprint('GREEN'if tfail==0 else'RED','  tests that fail %d/%d'%(tfail,total))
-		for(f,code,out,err)in lst:
-			if code:
-				Logs.pprint('RED','    %s'%f)
+	if not (lst := getattr(bld, 'utest_results', [])):
+		return
+	Logs.pprint('CYAN','execution summary')
+	total=len(lst)
+	tfail=len([x for x in lst if x[1]])
+	Logs.pprint('GREEN','  tests that pass %d/%d'%(total-tfail,total))
+	for f, code, out, err in lst:
+		if not code:
+			Logs.pprint('GREEN', f'    {f}')
+	Logs.pprint('GREEN'if tfail==0 else'RED','  tests that fail %d/%d'%(tfail,total))
+	for f, code, out, err in lst:
+		if code:
+			Logs.pprint('RED', f'    {f}')
 def set_exit_code(bld):
 	lst=getattr(bld,'utest_results',[])
-	for(f,code,out,err)in lst:
+	for (f,code,out,err) in lst:
 		if code:
 			msg=[]
 			if out:
-				msg.append('stdout:%s%s'%(os.linesep,out.decode('utf-8')))
+				msg.append(f"stdout:{os.linesep}{out.decode('utf-8')}")
 			if err:
-				msg.append('stderr:%s%s'%(os.linesep,err.decode('utf-8')))
+				msg.append(f"stderr:{os.linesep}{err.decode('utf-8')}")
 			bld.fatal(os.linesep.join(msg))
 def options(opt):
 	opt.add_option('--notests',action='store_true',default=False,help='Exec no unit tests',dest='no_tests')

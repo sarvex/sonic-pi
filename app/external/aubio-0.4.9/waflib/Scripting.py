@@ -76,9 +76,8 @@ def waf_entry_point(current_directory,version,wafdir):
 					Context.top_dir=env.top_dir
 					Context.out_dir=env.out_dir
 					break
-		if not Context.run_dir:
-			if Context.WSCRIPT_FILE in lst:
-				Context.run_dir=cur
+		if not Context.run_dir and Context.WSCRIPT_FILE in lst:
+			Context.run_dir=cur
 		next=os.path.dirname(cur)
 		if next==cur:
 			break
@@ -118,13 +117,12 @@ def waf_entry_point(current_directory,version,wafdir):
 			try:
 				run_commands()
 			except:
-				if options.pdb:
-					import pdb
-					type,value,tb=sys.exc_info()
-					traceback.print_exc()
-					pdb.post_mortem(tb)
-				else:
+				if not options.pdb:
 					raise
+				import pdb
+				type,value,tb=sys.exc_info()
+				traceback.print_exc()
+				pdb.post_mortem(tb)
 		except Errors.WafError as e:
 			if Logs.verbose>1:
 				Logs.pprint('RED',e.verbose_msg)
@@ -143,15 +141,16 @@ def set_main_module(file_path):
 	Context.g_module.root_path=file_path
 	def set_def(obj):
 		name=obj.__name__
-		if not name in Context.g_module.__dict__:
+		if name not in Context.g_module.__dict__:
 			setattr(Context.g_module,name,obj)
+
 	for k in(dist,distclean,distcheck):
 		set_def(k)
-	if not'init'in Context.g_module.__dict__:
+	if 'init' not in Context.g_module.__dict__:
 		Context.g_module.init=Utils.nada
-	if not'shutdown'in Context.g_module.__dict__:
+	if 'shutdown' not in Context.g_module.__dict__:
 		Context.g_module.shutdown=Utils.nada
-	if not'options'in Context.g_module.__dict__:
+	if 'options' not in Context.g_module.__dict__:
 		Context.g_module.options=Utils.nada
 def parse_options():
 	ctx=Context.create_context('options')
@@ -266,7 +265,7 @@ class Dist(Context.Context):
 			import zipfile
 			zip=zipfile.ZipFile(node.abspath(),'w',compression=zipfile.ZIP_DEFLATED)
 			for x in files:
-				archive_name=self.get_base_name()+'/'+x.path_from(self.base_path)
+				archive_name = f'{self.get_base_name()}/{x.path_from(self.base_path)}'
 				zip.write(x.abspath(),archive_name,zipfile.ZIP_DEFLATED)
 			zip.close()
 		else:
@@ -282,7 +281,9 @@ class Dist(Context.Context):
 		return node.abspath()
 	def add_tar_file(self,x,tar):
 		p=self.get_tar_path(x)
-		tinfo=tar.gettarinfo(name=p,arcname=self.get_tar_prefix()+'/'+x.path_from(self.base_path))
+		tinfo = tar.gettarinfo(
+			name=p, arcname=f'{self.get_tar_prefix()}/{x.path_from(self.base_path)}'
+		)
 		tinfo.uid=0
 		tinfo.gid=0
 		tinfo.uname='root'
@@ -301,7 +302,9 @@ class Dist(Context.Context):
 		try:
 			self.arch_name
 		except AttributeError:
-			self.arch_name=self.get_base_name()+'.'+self.ext_algo.get(self.algo,self.algo)
+			self.arch_name = (
+				f'{self.get_base_name()}.{self.ext_algo.get(self.algo, self.algo)}'
+			)
 		return self.arch_name
 	def get_base_name(self):
 		try:
@@ -309,17 +312,16 @@ class Dist(Context.Context):
 		except AttributeError:
 			appname=getattr(Context.g_module,Context.APPNAME,'noname')
 			version=getattr(Context.g_module,Context.VERSION,'1.0')
-			self.base_name=appname+'-'+version
+			self.base_name = f'{appname}-{version}'
 		return self.base_name
 	def get_excl(self):
 		try:
 			return self.excl
 		except AttributeError:
-			self.excl=Node.exclude_regs+' **/waf-2.* **/.waf-2.* **/waf3-2.* **/.waf3-2.* **/*~ **/*.rej **/*.orig **/*.pyc **/*.pyo **/*.bak **/*.swp **/.lock-w*'
+			self.excl = f'{Node.exclude_regs} **/waf-2.* **/.waf-2.* **/waf3-2.* **/.waf3-2.* **/*~ **/*.rej **/*.orig **/*.pyc **/*.pyo **/*.bak **/*.swp **/.lock-w*'
 			if Context.out_dir:
-				nd=self.root.find_node(Context.out_dir)
-				if nd:
-					self.excl+=' '+nd.path_from(self.base_path)
+				if nd := self.root.find_node(Context.out_dir):
+					self.excl += f' {nd.path_from(self.base_path)}'
 			return self.excl
 	def get_files(self):
 		try:
@@ -343,8 +345,15 @@ class DistCheck(Dist):
 			cfg=shlex.split(Options.options.distcheck_args)
 		else:
 			cfg=[x for x in sys.argv if x.startswith('-')]
-		cmd=[sys.executable,sys.argv[0],'configure','build','install','uninstall','--destdir='+tmpdir]+cfg
-		return cmd
+		return [
+			sys.executable,
+			sys.argv[0],
+			'configure',
+			'build',
+			'install',
+			'uninstall',
+			f'--destdir={tmpdir}',
+		] + cfg
 	def check(self):
 		import tempfile,tarfile
 		with tarfile.open(self.get_arch_name())as t:
@@ -352,11 +361,10 @@ class DistCheck(Dist):
 				t.extract(x)
 		instdir=tempfile.mkdtemp('.inst',self.get_base_name())
 		cmd=self.make_distcheck_cmd(instdir)
-		ret=Utils.subprocess.Popen(cmd,cwd=self.get_base_name()).wait()
-		if ret:
+		if ret := Utils.subprocess.Popen(cmd, cwd=self.get_base_name()).wait():
 			raise Errors.WafError('distcheck failed with code %r'%ret)
 		if os.path.exists(instdir):
-			raise Errors.WafError('distcheck succeeded, but files were left in %s'%instdir)
+			raise Errors.WafError(f'distcheck succeeded, but files were left in {instdir}')
 		shutil.rmtree(self.get_base_name())
 def distcheck(ctx):
 	'''checks if the project compiles (tarball from 'dist')'''

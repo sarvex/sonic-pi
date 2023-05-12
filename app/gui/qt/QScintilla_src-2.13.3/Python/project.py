@@ -46,12 +46,9 @@ class QScintilla(PyQtProject):
 
         super().apply_user_defaults(tool)
 
-        if not self.qsci_external_lib:
-            # If a directory to install the .api files was given then add the
-            # bundled .api files as well.
-            if self.api_dir:
-                self.wheel_includes.append(
-                        ('qsci/api/python/*.api', self.api_dir))
+        if not self.qsci_external_lib and self.api_dir:
+            self.wheel_includes.append(
+                    ('qsci/api/python/*.api', self.api_dir))
 
         if self.qsci_translations_dir:
             self.wheel_includes.append(
@@ -77,11 +74,7 @@ class Qsci(PyQtBindings):
     def __init__(self, project):
         """ Initialise the bindings. """
 
-        if project.qsci_external_lib:
-            qmake_CONFIG = ['qscintilla2']
-        else:
-            qmake_CONFIG = []
-
+        qmake_CONFIG = ['qscintilla2'] if project.qsci_external_lib else []
         super().__init__(project, 'Qsci', qmake_CONFIG=qmake_CONFIG)
 
     def apply_user_defaults(self, tool):
@@ -161,9 +154,9 @@ class Qsci(PyQtBindings):
         project = self.project
 
         installed_version = int(test_output[0])
-        installed_version_str = test_output[1]
-
         if project.version != installed_version:
+            installed_version_str = test_output[1]
+
             project.progress(
                     "QScintilla v{0} is required but QScintilla v{1} is "
                     "installed.".format(project.version_str,
@@ -176,10 +169,7 @@ class Qsci(PyQtBindings):
         """ Return True if the bindings are buildable. """
 
         # We need to check the compatibility of an external QScintilla library.
-        if self.project.qsci_external_lib:
-            return super().is_buildable()
-
-        return True
+        return super().is_buildable() if self.project.qsci_external_lib else True
 
     def _add_dir_sources(self, dname):
         """ Add the headers and sources from a particular directory. """
@@ -201,9 +191,10 @@ class Qsci(PyQtBindings):
 
         include_dirs = ['src']
 
-        for dn in ('include', 'lexers', 'lexlib', 'src'):
-            include_dirs.append(os.path.join('scintilla', dn))
-
+        include_dirs.extend(
+            os.path.join('scintilla', dn)
+            for dn in ('include', 'lexers', 'lexlib', 'src')
+        )
         self._add_dir_sources(os.path.join('src', 'Qsci'))
 
         for dn in include_dirs:

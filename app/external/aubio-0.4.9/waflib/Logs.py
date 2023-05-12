@@ -45,9 +45,7 @@ get_term_cols.__doc__="""
 	:rtype: int
 	"""
 def get_color(cl):
-	if colors_lst['USE']:
-		return colors_lst.get(cl,'')
-	return''
+	return colors_lst.get(cl,'') if colors_lst['USE'] else ''
 class color_dict(object):
 	def __getattr__(self,a):
 		return get_color(a)
@@ -62,13 +60,12 @@ class log_filter(logging.Filter):
 		rec.zone=rec.module
 		if rec.levelno>=logging.INFO:
 			return True
-		m=re_log.match(rec.msg)
-		if m:
+		if m := re_log.match(rec.msg):
 			rec.zone=m.group(1)
 			rec.msg=m.group(2)
 		if zones:
 			return getattr(rec,'zone','')in zones or'*'in zones
-		elif not verbose>2:
+		elif verbose <= 2:
 			return False
 		return True
 class log_handler(logging.StreamHandler):
@@ -89,10 +86,10 @@ class log_handler(logging.StreamHandler):
 			self.handleError(record)
 	def emit_override(self,record,**kw):
 		self.terminator=getattr(record,'terminator','\n')
-		stream=self.stream
 		if unicode:
 			msg=self.formatter.format(record)
-			fs='%s'+self.terminator
+			fs = f'%s{self.terminator}'
+			stream=self.stream
 			try:
 				if(isinstance(msg,unicode)and getattr(stream,'encoding',None)):
 					fs=fs.decode(stream.encoding)
@@ -115,7 +112,7 @@ class formatter(logging.Formatter):
 		except Exception:
 			msg=rec.msg
 		use=colors_lst['USE']
-		if(use==1 and rec.stream.isatty())or use==2:
+		if (use==1 and rec.stream.isatty())or use==2:
 			c1=getattr(rec,'c1',None)
 			if c1 is None:
 				c1=''
@@ -126,13 +123,11 @@ class formatter(logging.Formatter):
 				elif rec.levelno>=logging.INFO:
 					c1=colors.GREEN
 			c2=getattr(rec,'c2',colors.NORMAL)
-			msg='%s%s%s'%(c1,msg,c2)
+			msg = f'{c1}{msg}{c2}'
 		else:
 			msg=re.sub(r'\r(?!\n)|\x1B\[(K|.*?(m|h|l))','',msg)
 		if rec.levelno>=logging.INFO:
-			if rec.args:
-				return msg%rec.args
-			return msg
+			return msg%rec.args if rec.args else msg
 		rec.msg=msg
 		rec.c1=colors.PINK
 		rec.c2=colors.NORMAL
@@ -146,8 +141,7 @@ def debug(*k,**kw):
 def error(*k,**kw):
 	log.error(*k,**kw)
 	if verbose>2:
-		st=traceback.extract_stack()
-		if st:
+		if st := traceback.extract_stack():
 			st=st[:-1]
 			buf=[]
 			for filename,lineno,name,line in st:
@@ -172,10 +166,7 @@ def init_log():
 	log.setLevel(logging.DEBUG)
 def make_logger(path,name):
 	logger=logging.getLogger(name)
-	if sys.hexversion>0x3000000:
-		encoding=sys.stdout.encoding
-	else:
-		encoding=None
+	encoding = sys.stdout.encoding if sys.hexversion>0x3000000 else None
 	hdlr=logging.FileHandler(path,'w',encoding=encoding)
 	formatter=logging.Formatter('%(message)s')
 	hdlr.setFormatter(formatter)

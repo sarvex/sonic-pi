@@ -43,9 +43,8 @@ def del_tmp_sink_path(path):
 
 def array_from_yaml_file(filename):
     import yaml
-    f = open(filename)
-    yaml_data = yaml.safe_load(f)
-    f.close()
+    with open(filename) as f:
+        yaml_data = yaml.safe_load(f)
     return yaml_data
 
 def count_samples_in_file(file_path):
@@ -64,8 +63,7 @@ def count_samples_in_directory(samples_dir):
     for f in os.walk(samples_dir):
         if len(f[2]):
             for each in f[2]:
-                file_path = os.path.join(f[0], each)
-                if file_path:
+                if file_path := os.path.join(f[0], each):
                     total_frames += count_samples_in_file(file_path)
     return total_frames
 
@@ -83,8 +81,7 @@ def parse_file_samplerate(soundfile):
     samplerate = None
     # parse samplerate
     re_sr = re.compile(r'/([0-9]{4,})Hz_.*')
-    match_samplerate = re_sr.findall(soundfile)
-    if match_samplerate:
+    if match_samplerate := re_sr.findall(soundfile):
         samplerate = int(match_samplerate[0])
     else:
         import warnings

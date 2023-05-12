@@ -72,19 +72,19 @@ class aubio_source_test_case(unittest.TestCase):
         expected_mono = np.sum(write_samples, axis=0)/write_samples.shape[0]
         out = get_tmp_sink_path()
         snk = aubio.sink(out, samplerate, channels=channels)
-        for i in range(blocks):
+        for _ in range(blocks):
             snk.do_multi(write_samples, hop_size)
         # close the sink before reading from it
         snk.close()
 
         src = aubio.source(out, samplerate, hop_size)
-        for i in range(blocks):
+        for _ in range(blocks):
             read_samples, read = src.do_multi()
             assert_equal (read_samples, write_samples)
             assert_equal (read, hop_size)
 
         src.seek(0)
-        for i in range(blocks):
+        for _ in range(blocks):
             read_samples, read = src()
             assert_equal (read, hop_size)
             assert_equal (read_samples, expected_mono)

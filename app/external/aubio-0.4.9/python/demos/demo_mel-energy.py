@@ -8,7 +8,7 @@ win_s = 512                 # fft size
 hop_s = win_s // 4          # hop size
 
 if len(sys.argv) < 2:
-    print("Usage: %s <filename> [samplerate]" % sys.argv[0])
+    print(f"Usage: {sys.argv[0]} <filename> [samplerate]")
     sys.exit(1)
 
 filename = sys.argv[1]
@@ -40,32 +40,31 @@ while True:
     total_frames += read
     if read < hop_s: break
 
-if 1:
-    print("done computing, now plotting")
-    import matplotlib.pyplot as plt
-    from demo_waveform_plot import get_waveform_plot
-    from demo_waveform_plot import set_xlabels_sample2time
-    fig = plt.figure()
-    plt.rc('lines',linewidth='.8')
-    wave = plt.axes([0.1, 0.75, 0.8, 0.19])
-    get_waveform_plot(filename, samplerate, block_size = hop_s, ax = wave )
-    wave.yaxis.set_visible(False)
-    wave.xaxis.set_visible(False)
+print("done computing, now plotting")
+import matplotlib.pyplot as plt
+from demo_waveform_plot import get_waveform_plot
+from demo_waveform_plot import set_xlabels_sample2time
+fig = plt.figure()
+plt.rc('lines',linewidth='.8')
+wave = plt.axes([0.1, 0.75, 0.8, 0.19])
+get_waveform_plot(filename, samplerate, block_size = hop_s, ax = wave )
+wave.yaxis.set_visible(False)
+wave.xaxis.set_visible(False)
 
-    n_plots = len(energies.T)
-    all_desc_times = [ x * hop_s  for x in range(len(energies)) ]
-    for i, band in enumerate(energies.T):
-        ax = plt.axes ( [0.1, 0.75 - ((i+1) * 0.65 / n_plots),  0.8, 0.65 / n_plots], sharex = wave )
-        ax.plot(all_desc_times, band, '-', label = 'band %d' % i)
-        #ax.set_ylabel(method, rotation = 0)
-        ax.xaxis.set_visible(False)
-        ax.yaxis.set_visible(False)
-        ax.axis(xmax = all_desc_times[-1], xmin = all_desc_times[0])
-        ax.annotate('band %d' % i, xy=(-10, 0),  xycoords='axes points',
-                horizontalalignment='right', verticalalignment='bottom',
-                size = 'xx-small',
-                )
-    set_xlabels_sample2time( ax, all_desc_times[-1], samplerate) 
-    #plt.ylabel('spectral descriptor value')
-    ax.xaxis.set_visible(True)
-    plt.show()
+n_plots = len(energies.T)
+all_desc_times = [ x * hop_s  for x in range(len(energies)) ]
+for i, band in enumerate(energies.T):
+    ax = plt.axes ( [0.1, 0.75 - ((i+1) * 0.65 / n_plots),  0.8, 0.65 / n_plots], sharex = wave )
+    ax.plot(all_desc_times, band, '-', label = 'band %d' % i)
+    #ax.set_ylabel(method, rotation = 0)
+    ax.xaxis.set_visible(False)
+    ax.yaxis.set_visible(False)
+    ax.axis(xmax = all_desc_times[-1], xmin = all_desc_times[0])
+    ax.annotate('band %d' % i, xy=(-10, 0),  xycoords='axes points',
+            horizontalalignment='right', verticalalignment='bottom',
+            size = 'xx-small',
+            )
+set_xlabels_sample2time( ax, all_desc_times[-1], samplerate)
+#plt.ylabel('spectral descriptor value')
+ax.xaxis.set_visible(True)
+plt.show()

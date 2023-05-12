@@ -17,7 +17,7 @@ __aubio_version__ = get_aubio_version()
 
 include_dirs = []
 library_dirs = []
-define_macros = [('AUBIO_VERSION', '%s' % __aubio_version__)]
+define_macros = [('AUBIO_VERSION', f'{__aubio_version__}')]
 extra_link_args = []
 
 include_dirs += ['python/ext']

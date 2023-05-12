@@ -23,24 +23,22 @@ def parse_args():
 
 
 def parse_clang_xml(xml):
-    for line in xml.splitlines():
-        if line.startswith(b'<replacement '):
-            return False
-    return True
+    return not any(line.startswith(b'<replacement ') for line in xml.splitlines())
 
 
 def fix_file(args, file_absolute_path):
-    logging.info('Fixing formatting errors in file: {}'.format(file_absolute_path))
+    logging.info(f'Fixing formatting errors in file: {file_absolute_path}')
     clang_format_args = [args.clang_format, '-style=file', '-i', file_absolute_path]
     try:
         subprocess.check_call(clang_format_args)
     except subprocess.CalledProcessError:
-        logging.error('Error running clang-format on {},'
-                      ' please run clang-format -i by hand'.format(file_absolute_path))
+        logging.error(
+            f'Error running clang-format on {file_absolute_path}, please run clang-format -i by hand'
+        )
 
 
 def check_files_in_path(args, path):
-    logging.info('Checking files in {}'.format(path))
+    logging.info(f'Checking files in {path}')
     errors_found = False
 
     for (path, dirs, files) in os.walk(path):
@@ -55,16 +53,15 @@ def check_files_in_path(args, path):
                     clang_format_output = subprocess.check_output(clang_format_args)
                 except subprocess.CalledProcessError:
                     logging.error(
-                        'Could not execute {}, try running this script with the'
-                        '--clang-format option'.format(args.clang_format))
+                        f'Could not execute {args.clang_format}, try running this script with the--clang-format option'
+                    )
                     sys.exit(2)
 
                 if not parse_clang_xml(clang_format_output):
                     if args.fix:
                         fix_file(args, file_absolute_path)
                     else:
-                        logging.warning(
-                            '{} has formatting errors'.format(file_absolute_path))
+                        logging.warning(f'{file_absolute_path} has formatting errors')
                         errors_found = True
 
     return errors_found

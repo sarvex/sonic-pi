@@ -45,8 +45,8 @@ if __name__ == '__main__':
         sys.exit(1)
     if len(sys.argv) < 3:
         input_path = sys.argv[1]
-        basename = os.path.splitext(os.path.basename(input_path))[0] + ".wav"
-        output_path = "filtered_" + basename
+        basename = f"{os.path.splitext(os.path.basename(input_path))[0]}.wav"
+        output_path = f"filtered_{basename}"
     else:
         input_path, output_path = sys.argv[1:]
     # run function

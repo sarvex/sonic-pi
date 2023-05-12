@@ -41,13 +41,13 @@ def check_fortran(self,*k,**kw):
 @conf
 def check_fc(self,*k,**kw):
 	kw['compiler']='fc'
-	if not'compile_mode'in kw:
+	if 'compile_mode' not in kw:
 		kw['compile_mode']='fc'
-	if not'type'in kw:
+	if 'type' not in kw:
 		kw['type']='fcprogram'
-	if not'compile_filename'in kw:
+	if 'compile_filename' not in kw:
 		kw['compile_filename']='test.f90'
-	if not'code'in kw:
+	if 'code' not in kw:
 		kw['code']=FC_FRAGMENT
 	return self.check(*k,**kw)
 @conf
@@ -95,7 +95,7 @@ def check_fortran_dummy_main(self,*k,**kw):
 				self.end_msg('no')
 			else:
 				self.env.FC_MAIN=main
-				self.end_msg('yes %s'%main)
+				self.end_msg(f'yes {main}')
 			break
 		except self.errors.ConfigurationError:
 			pass
@@ -108,11 +108,11 @@ POSIX_LIB_FLAGS=re.compile('-l\S+')
 @conf
 def is_link_verbose(self,txt):
 	assert isinstance(txt,str)
-	for line in txt.splitlines():
-		if not GCC_DRIVER_LINE.search(line):
-			if POSIX_STATIC_EXT.search(line)or POSIX_LIB_FLAGS.search(line):
-				return True
-	return False
+	return any(
+		not GCC_DRIVER_LINE.search(line)
+		and (POSIX_STATIC_EXT.search(line) or POSIX_LIB_FLAGS.search(line))
+		for line in txt.splitlines()
+	)
 @conf
 def check_fortran_verbose_flag(self,*k,**kw):
 	self.start_msg('fortran link verbose flag')
@@ -137,10 +137,7 @@ else:
 	LINKFLAGS_IGNORED.append(r'-lgcc*')
 RLINKFLAGS_IGNORED=[re.compile(f)for f in LINKFLAGS_IGNORED]
 def _match_ignore(line):
-	for i in RLINKFLAGS_IGNORED:
-		if i.match(line):
-			return True
-	return False
+	return any(i.match(line) for i in RLINKFLAGS_IGNORED)
 def parse_fortran_link(lines):
 	final_flags=[]
 	for line in lines:
@@ -159,13 +156,11 @@ def _parse_flink_token(lexer,token,tmp_flags):
 		if t.startswith('P,'):
 			t=t[2:]
 		for opt in t.split(os.pathsep):
-			tmp_flags.append('-L%s'%opt)
+			tmp_flags.append(f'-L{opt}')
 	elif NOSPACE_OPTS.match(token):
 		tmp_flags.append(token)
 	elif POSIX_LIB_FLAGS.match(token):
 		tmp_flags.append(token)
-	else:
-		pass
 	t=lexer.get_token()
 	return t
 def _parse_flink_line(line,final_flags):
@@ -191,7 +186,7 @@ def check_fortran_clib(self,autoadd=True,*k,**kw):
 	else:
 		out=self.test_bld.err
 		flags=parse_fortran_link(out.splitlines())
-		self.end_msg('ok (%s)'%' '.join(flags))
+		self.end_msg(f"ok ({' '.join(flags)})")
 		self.env.LINKFLAGS_CLIB=flags
 		return flags
 	return[]
@@ -206,11 +201,10 @@ def getoutput(conf,cmd,stdin=False):
 	try:
 		out,err=conf.cmd_and_log(cmd,env=env,output=0,input=input)
 	except Errors.WafError as e:
-		if not(hasattr(e,'stderr')and hasattr(e,'stdout')):
+		if not hasattr(e, 'stderr') or not hasattr(e, 'stdout'):
 			raise e
-		else:
-			out=e.stdout
-			err=e.stderr
+		out=e.stdout
+		err=e.stderr
 	except Exception:
 		conf.fatal('could not determine the compiler version %r'%cmd)
 	return(out,err)
@@ -257,13 +251,13 @@ def check_fortran_mangling(self,*k,**kw):
 	if not self.env.FC_MAIN:
 		self.fatal('Checking for mangling requires self.env.FC_MAIN (execute "check_fortran_dummy_main" first?)')
 	self.start_msg('Getting fortran mangling scheme')
-	for(u,du,c)in mangling_schemes():
+	for (u,du,c) in mangling_schemes():
 		try:
 			self.check_cc(compile_filename=[],features='link_main_routines_func',msg='nomsg',errmsg='nomsg',dummy_func_nounder=mangle_name(u,du,c,'foobar'),dummy_func_under=mangle_name(u,du,c,'foo_bar'),main_func_name=self.env.FC_MAIN)
 		except self.errors.ConfigurationError:
 			pass
 		else:
-			self.end_msg("ok ('%s', '%s', '%s-case')"%(u,du,c))
+			self.end_msg(f"ok ('{u}', '{du}', '{c}-case')")
 			self.env.FORTRAN_MANGLING=(u,du,c)
 			break
 	else:
@@ -276,9 +270,15 @@ def set_lib_pat(self):
 	self.env.fcshlib_PATTERN=self.env.pyext_PATTERN
 @conf
 def detect_openmp(self):
-	for x in('-fopenmp','-openmp','-mp','-xopenmp','-omp','-qsmp=omp'):
+	for x in ('-fopenmp','-openmp','-mp','-xopenmp','-omp','-qsmp=omp'):
 		try:
-			self.check_fc(msg='Checking for OpenMP flag %s'%x,fragment='program main\n  call omp_get_num_threads()\nend program main',fcflags=x,linkflags=x,uselib_store='OPENMP')
+			self.check_fc(
+				msg=f'Checking for OpenMP flag {x}',
+				fragment='program main\n  call omp_get_num_threads()\nend program main',
+				fcflags=x,
+				linkflags=x,
+				uselib_store='OPENMP',
+			)
 		except self.errors.ConfigurationError:
 			pass
 		else:

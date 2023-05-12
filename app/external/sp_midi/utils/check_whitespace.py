@@ -17,9 +17,8 @@ def has_trailing_whitespace(fname):
     with open(fname) as fdesc:
         for line in fdesc:
             line = line.rstrip('\n')
-            if len(line) > 0:
-                if line[len(line) - 1] == ' ' or line[len(line) - 1] == '\t':
-                    return True
+            if len(line) > 0 and line[len(line) - 1] in [' ', '\t']:
+                return True
 
     return False
 
@@ -42,11 +41,11 @@ for root, dirs, files in os.walk('src'):
         for end in TYPES_TO_CHECK:
             if fullname.endswith(end):
                 if has_trailing_whitespace(fullname):
-                    print(fullname + " contains trailing whitespace")
+                    print(f"{fullname} contains trailing whitespace")
                     bad_files = True
 
                 if has_tabs_in_indentation(fullname):
-                    print(fullname + " contains tabs in indentation")
+                    print(f"{fullname} contains tabs in indentation")
                     bad_files = True
 
 

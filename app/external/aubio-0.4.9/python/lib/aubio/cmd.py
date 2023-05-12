@@ -51,8 +51,10 @@ def parser_add_subcommand_onset(subparsers):
             formatter_class = argparse.ArgumentDefaultsHelpFormatter)
     subparser.add_input()
     subparser.add_buf_hop_size()
-    helpstr = "onset novelty function"
-    helpstr += " <default|energy|hfc|complex|phase|specdiff|kl|mkl|specflux>"
+    helpstr = (
+        "onset novelty function"
+        + " <default|energy|hfc|complex|phase|specdiff|kl|mkl|specflux>"
+    )
     subparser.add_method(helpstr=helpstr)
     subparser.add_threshold()
     subparser.add_silence()
@@ -144,8 +146,10 @@ def parser_add_subcommand_cut(subparsers):
     subparser = subparsers.add_parser('cut',
             help='slice at timestamps')
     subparser.add_input()
-    helpstr = "onset novelty function"
-    helpstr += " <default|energy|hfc|complex|phase|specdiff|kl|mkl|specflux>"
+    helpstr = (
+        "onset novelty function"
+        + " <default|energy|hfc|complex|phase|specdiff|kl|mkl|specflux>"
+    )
     subparser.add_method(helpstr=helpstr)
     subparser.add_buf_hop_size()
     subparser.add_silence()
@@ -193,16 +197,28 @@ class AubioArgumentParser(argparse.ArgumentParser):
                 help="overlap size [default=%d]" % hop_size)
 
     def add_method(self, method='default', helpstr='method'):
-        self.add_argument("-m", "--method",
-                metavar = "<method>", type=str,
-                action="store", dest="method", default=method,
-                help="%s [default=%s]" % (helpstr, method))
+        self.add_argument(
+            "-m",
+            "--method",
+            metavar="<method>",
+            type=str,
+            action="store",
+            dest="method",
+            default=method,
+            help=f"{helpstr} [default={method}]",
+        )
 
     def add_threshold(self, default=None):
-        self.add_argument("-t", "--threshold",
-                metavar = "<threshold>", type=float,
-                action="store", dest="threshold", default=default,
-                help="threshold [default=%s]" % default)
+        self.add_argument(
+            "-t",
+            "--threshold",
+            metavar="<threshold>",
+            type=float,
+            action="store",
+            dest="threshold",
+            default=default,
+            help=f"threshold [default={default}]",
+        )
 
     def add_silence(self):
         self.add_argument("-s", "--silence",
@@ -217,22 +233,30 @@ class AubioArgumentParser(argparse.ArgumentParser):
                 help="release drop threshold")
 
     def add_minioi(self, default="12ms"):
-        self.add_argument("-M", "--minioi",
-                metavar = "<value>", type=str,
-                action="store", dest="minioi", default=default,
-                help="minimum Inter-Onset Interval [default=%s]" % default)
+        self.add_argument(
+            "-M",
+            "--minioi",
+            metavar="<value>",
+            type=str,
+            action="store",
+            dest="minioi",
+            default=default,
+            help=f"minimum Inter-Onset Interval [default={default}]",
+        )
 
     def add_pitch_unit(self, default="Hz"):
         help_str = "frequency unit, should be one of Hz, midi, bin, cent"
-        help_str += " [default=%s]" % default
+        help_str += f" [default={default}]"
         self.add_argument("-u", "--pitch-unit",
                 metavar = "<value>", type=str,
                 action="store", dest="pitch_unit", default=default,
                 help=help_str)
 
     def add_time_format(self):
-        helpstr = "select time values output format (samples, ms, seconds)"
-        helpstr += " [default=seconds]"
+        helpstr = (
+            "select time values output format (samples, ms, seconds)"
+            + " [default=seconds]"
+        )
         self.add_argument("-T", "--time-format",
                  metavar='format',
                  dest="time_format",
@@ -277,12 +301,12 @@ def samples2samples(n_frames, _samplerate):
 def timefunc(mode):
     if mode is None or mode == 'seconds' or mode == 's':
         return samples2seconds
-    elif mode == 'ms' or mode == 'milliseconds':
+    elif mode in ['ms', 'milliseconds']:
         return samples2milliseconds
     elif mode == 'samples':
         return samples2samples
     else:
-        raise ValueError("invalid time format '%s'" % mode)
+        raise ValueError(f"invalid time format '{mode}'")
 
 # definition of processing classes
 
@@ -489,7 +513,7 @@ class process_quiet(default_process):
         fmt_out = None
         if res == -1:
             fmt_out = "NOISY: "
-        if res == 2:
+        elif res == 2:
             fmt_out = "QUIET: "
         if fmt_out is not None:
             fmt_out += self.time2string(frames_read, samplerate)
@@ -536,7 +560,7 @@ def _cut_slice(options, timestamps):
             timestamps_end += [1e120]
         if options.cut_until_nslices:
             slice_lag = options.cut_until_nslices
-            timestamps_end = [t for t in timestamps[1 + slice_lag:]]
+            timestamps_end = list(timestamps[1 + slice_lag:])
             timestamps_end += [1e120] * (options.cut_until_nslices + 1)
         aubio.slice_source_at_stamps(options.source_uri,
                 timestamps, timestamps_end = timestamps_end,
@@ -565,10 +589,10 @@ def main():
     else:  # in py3, we can simply use parser directly
         args = parser.parse_args()
     if 'show_version' in args and args.show_version:
-        sys.stdout.write('aubio version ' + aubio.version + '\n')
+        sys.stdout.write(f'aubio version {aubio.version}' + '\n')
         sys.exit(0)
     elif 'verbose' in args and args.verbose > 3:
-        sys.stderr.write('aubio version ' + aubio.version + '\n')
+        sys.stderr.write(f'aubio version {aubio.version}' + '\n')
     if 'command' not in args or args.command is None \
             or args.command in ['help']:
         # no command given, print help and return 1
@@ -586,7 +610,7 @@ def main():
     try:
         # open source_uri
         with aubio.source(args.source_uri, hop_size=args.hop_size,
-                samplerate=args.samplerate) as a_source:
+                        samplerate=args.samplerate) as a_source:
             # always update args.samplerate to native samplerate, in case
             # source was opened with args.samplerate=0
             args.samplerate = a_source.samplerate
@@ -609,8 +633,7 @@ def main():
             # flush the processor if needed
             processor.flush(frames_read, a_source.samplerate)
             if args.verbose > 1:
-                fmt_string = "read {:.2f}s"
-                fmt_string += " ({:d} samples in {:d} blocks of {:d})"
+                fmt_string = "read {:.2f}s" + " ({:d} samples in {:d} blocks of {:d})"
                 fmt_string += " from {:s} at {:d}Hz\n"
                 sys.stderr.write(fmt_string.format(
                         frames_read / float(a_source.samplerate),

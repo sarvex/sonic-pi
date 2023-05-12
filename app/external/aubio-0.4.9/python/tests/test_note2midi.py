@@ -61,8 +61,10 @@ class Test_note2midi_good_values(object):
             # - osx: python <= 2.7.10
             # - win: python <= 2.7.12
             import sys
-            strmsg = "len(u'\\U0001D12A') != 1, expected decoding failure"
-            strmsg += " | upgrade to Python 3 to fix"
+            strmsg = (
+                "len(u'\\U0001D12A') != 1, expected decoding failure"
+                + " | upgrade to Python 3 to fix"
+            )
             strmsg += " | {:s} | {:s} {:s}"
             if len('\U0001D12A') != 1 and sys.version[0] == '2':
                 skipTest(strmsg.format(repr(e), sys.platform, sys.version))

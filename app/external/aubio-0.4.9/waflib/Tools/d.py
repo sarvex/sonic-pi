@@ -24,7 +24,7 @@ class dstlib(stlink_task):
 	pass
 @extension('.d','.di','.D')
 def d_hook(self,node):
-	ext=Utils.destos_to_binfmt(self.env.DEST_OS)=='pe'and'obj'or'o'
+	ext = 'obj' if Utils.destos_to_binfmt(self.env.DEST_OS)=='pe' else 'o'
 	out='%s.%d.%s'%(node.name,self.idx,ext)
 	def create_compiled_task(self,name,node):
 		task=self.create_task(name,node,node.parent.find_or_declare(out))
@@ -33,6 +33,7 @@ def d_hook(self,node):
 		except AttributeError:
 			self.compiled_tasks=[task]
 		return task
+
 	if getattr(self,'generate_headers',None):
 		tsk=create_compiled_task(self,'d_with_header',node)
 		tsk.outputs.append(node.change_ext(self.env.DHEADER_ext))
@@ -48,7 +49,7 @@ def generate_header(self,filename):
 @feature('d')
 def process_header(self):
 	for i in getattr(self,'header_lst',[]):
-		node=self.path.find_resource(i[0])
-		if not node:
+		if node := self.path.find_resource(i[0]):
+			self.create_task('d_header',node,node.change_ext('.di'))
+		else:
 			raise Errors.WafError('file %r not found on d obj'%i[0])
-		self.create_task('d_header',node,node.change_ext('.di'))

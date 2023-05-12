@@ -30,23 +30,28 @@ int main(int argc, char **argv) {
 def link_lib_test_fun(self):
 	def write_test_file(task):
 		task.outputs[0].write(task.generator.code)
+
 	rpath=[]
 	if getattr(self,'add_rpath',False):
 		rpath=[self.bld.path.get_bld().abspath()]
 	mode=self.mode
-	m='%s %s'%(mode,mode)
-	ex=self.test_exec and'test_exec'or''
+	m = f'{mode} {mode}'
+	ex = 'test_exec' if self.test_exec else ''
 	bld=self.bld
-	bld(rule=write_test_file,target='test.'+mode,code=LIB_CODE)
-	bld(rule=write_test_file,target='main.'+mode,code=MAIN_CODE)
-	bld(features='%sshlib'%m,source='test.'+mode,target='test')
-	bld(features='%sprogram %s'%(m,ex),source='main.'+mode,target='app',use='test',rpath=rpath)
+	bld(rule=write_test_file, target=f'test.{mode}', code=LIB_CODE)
+	bld(rule=write_test_file, target=f'main.{mode}', code=MAIN_CODE)
+	bld(features=f'{m}shlib', source=f'test.{mode}', target='test')
+	bld(
+		features=f'{m}program {ex}',
+		source=f'main.{mode}',
+		target='app',
+		use='test',
+		rpath=rpath,
+	)
 @conf
 def check_library(self,mode=None,test_exec=True):
 	if not mode:
-		mode='c'
-		if self.env.CXX:
-			mode='cxx'
+		mode = 'cxx' if self.env.CXX else 'c'
 	self.check(compile_filename=[],features='link_lib_test',msg='Checking for libraries',mode=mode,test_exec=test_exec)
 INLINE_CODE='''
 typedef int foo_t;
@@ -59,13 +64,10 @@ INLINE_VALUES=['inline','__inline__','__inline']
 @conf
 def check_inline(self,**kw):
 	self.start_msg('Checking for inline')
-	if not'define_name'in kw:
+	if 'define_name' not in kw:
 		kw['define_name']='INLINE_MACRO'
-	if not'features'in kw:
-		if self.env.CXX:
-			kw['features']=['cxx']
-		else:
-			kw['features']=['c']
+	if 'features' not in kw:
+		kw['features'] = ['cxx'] if self.env.CXX else ['c']
 	for x in INLINE_VALUES:
 		kw['fragment']=INLINE_CODE%(x,x)
 		try:
@@ -86,15 +88,12 @@ int main(int argc, char **argv) {
 '''
 @conf
 def check_large_file(self,**kw):
-	if not'define_name'in kw:
+	if 'define_name' not in kw:
 		kw['define_name']='HAVE_LARGEFILE'
-	if not'execute'in kw:
+	if 'execute' not in kw:
 		kw['execute']=True
-	if not'features'in kw:
-		if self.env.CXX:
-			kw['features']=['cxx','cxxprogram']
-		else:
-			kw['features']=['c','cprogram']
+	if 'features' not in kw:
+		kw['features'] = ['cxx','cxxprogram'] if self.env.CXX else ['c','cprogram']
 	kw['fragment']=LARGE_FRAGMENT
 	kw['msg']='Checking for large file support'
 	ret=True

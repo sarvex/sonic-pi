@@ -46,15 +46,11 @@ def build_cmake_args(args):
         logging.error('CMake not found, please use the --cmake option')
         return None
 
-    cmake_args = []
-    cmake_args.append(args.cmake)
-
+    cmake_args = [args.cmake]
     if args.generator is not None:
-        cmake_args.append('-G')
-        cmake_args.append(args.generator)
-
+        cmake_args.extend(('-G', args.generator))
     if args.configuration is not None:
-        cmake_args.append('-DCMAKE_BUILD_TYPE=' + args.configuration)
+        cmake_args.append(f'-DCMAKE_BUILD_TYPE={args.configuration}')
 
     if args.flags is not None:
         cmake_args.append(args.flags)

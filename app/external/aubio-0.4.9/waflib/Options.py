@@ -7,10 +7,15 @@ from waflib import Logs,Utils,Context,Errors
 options=optparse.Values()
 commands=[]
 envvars=[]
-lockfile=os.environ.get('WAFLOCK','.lock-waf_%s_build'%sys.platform)
+lockfile = os.environ.get('WAFLOCK', f'.lock-waf_{sys.platform}_build')
 class opt_parser(optparse.OptionParser):
 	def __init__(self,ctx,allow_unknown=False):
-		optparse.OptionParser.__init__(self,conflict_handler='resolve',add_help_option=False,version='waf %s (%s)'%(Context.WAFVERSION,Context.WAFREVISION))
+		optparse.OptionParser.__init__(
+			self,
+			conflict_handler='resolve',
+			add_help_option=False,
+			version=f'waf {Context.WAFVERSION} ({Context.WAFREVISION})',
+		)
 		self.formatter.width=Logs.get_term_cols()
 		self.ctx=ctx
 		self.allow_unknown=allow_unknown
@@ -33,16 +38,19 @@ class opt_parser(optparse.OptionParser):
 			s=cls.__doc__ or''
 			cmds_str[cls.cmd]=s
 		if Context.g_module:
-			for(k,v)in Context.g_module.__dict__.items():
+			for (k,v) in Context.g_module.__dict__.items():
 				if k in('options','init','shutdown'):
 					continue
-				if type(v)is type(Context.create_context):
-					if v.__doc__ and not k.startswith('_'):
-						cmds_str[k]=v.__doc__
+				if (
+					type(v) is type(Context.create_context)
+					and v.__doc__
+					and not k.startswith('_')
+				):
+					cmds_str[k]=v.__doc__
 		just=0
 		for k in cmds_str:
 			just=max(just,len(k))
-		lst=['  %s: %s'%(k.ljust(just),v)for(k,v)in cmds_str.items()]
+		lst = [f'  {k.ljust(just)}: {v}' for(k,v)in cmds_str.items()]
 		lst.sort()
 		ret='\n'.join(lst)
 		return'''waf [commands] [options]
@@ -59,7 +67,7 @@ class OptionsContext(Context.Context):
 		self.option_groups={}
 		jobs=self.jobs()
 		p=self.add_option
-		color=os.environ.get('NOCOLOR','')and'no'or'auto'
+		color = 'no' if os.environ.get('NOCOLOR','') else 'auto'
 		if os.environ.get('CLICOLOR','')=='0':
 			color='no'
 		elif os.environ.get('CLICOLOR_FORCE','')=='1':
@@ -139,10 +147,10 @@ class OptionsContext(Context.Context):
 		try:
 			return self.option_groups[opt_str]
 		except KeyError:
-			for group in self.parser.option_groups:
-				if group.title==opt_str:
-					return group
-			return None
+			return next(
+				(group for group in self.parser.option_groups if group.title == opt_str),
+				None,
+			)
 	def sanitize_path(self,path,cwd=None):
 		if not cwd:
 			cwd=Context.launch_dir

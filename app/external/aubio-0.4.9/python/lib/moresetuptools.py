@@ -117,19 +117,17 @@ def add_external_deps(ext, usedouble = False):
     ext.define_macros += [('HAVE_WAVWRITE', 1)]
     ext.define_macros += [('HAVE_WAVREAD', 1)]
 
-    # TODO: add cblas
-    if 0:
-        ext.libraries += ['cblas']
-        ext.define_macros += [('HAVE_ATLAS_CBLAS_H', 1)]
-
 def add_system_aubio(ext):
     # use pkg-config to find aubio's location
     aubio_version = get_aubio_version()
-    add_packages(['aubio = ' + aubio_version], ext)
+    add_packages([f'aubio = {aubio_version}'], ext)
     if 'aubio' not in ext.libraries:
-        print("Info: aubio " + aubio_version + " was not found by pkg-config")
+        print(f"Info: aubio {aubio_version} was not found by pkg-config")
     else:
-        print("Info: using system aubio " + aubio_version + " found in " + ' '.join(ext.library_dirs))
+        print(
+            f"Info: using system aubio {aubio_version} found in "
+            + ' '.join(ext.library_dirs)
+        )
 
 def add_libav_on_win(ext):
     """ no pkg-config on windows, simply assume these libs are available """
@@ -162,10 +160,7 @@ class build_ext(_build_ext):
                     level=distutils.log.INFO)
 
     def build_extension(self, extension):
-        if self.enable_double or 'HAVE_AUBIO_DOUBLE' in os.environ:
-            enable_double = True
-        else:
-            enable_double = False
+        enable_double = bool(self.enable_double or 'HAVE_AUBIO_DOUBLE' in os.environ)
         # seack for aubio headers and lib in PKG_CONFIG_PATH
         add_system_aubio(extension)
         # the lib was not installed on this system
@@ -182,7 +177,7 @@ class build_ext(_build_ext):
                 add_external_deps(extension, usedouble=enable_double)
                 # force adding libav on windows
                 if os.name == 'nt' and ('WITH_LIBAV' in os.environ \
-                        or 'CONDA_PREFIX' in os.environ):
+                            or 'CONDA_PREFIX' in os.environ):
                     add_libav_on_win(extension)
                 # add libaubio sources and look for optional deps with pkg-config
                 add_local_aubio_sources(extension)

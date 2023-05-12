@@ -8,21 +8,18 @@ n_filters = 40              # must be 40 for mfcc
 n_coeffs = 13
 
 if len(sys.argv) < 2:
-    print("Usage: %s <source_filename> [samplerate] [win_s] [hop_s] [mode]" % sys.argv[0])
+    print(
+        f"Usage: {sys.argv[0]} <source_filename> [samplerate] [win_s] [hop_s] [mode]"
+    )
     print("  where [mode] can be 'delta' or 'ddelta' for first and second derivatives")
     sys.exit(1)
 
 source_filename = sys.argv[1]
 
-if len(sys.argv) > 2: samplerate = int(sys.argv[2])
-else: samplerate = 0
-if len(sys.argv) > 3: win_s = int(sys.argv[3])
-else: win_s = 512
-if len(sys.argv) > 4: hop_s = int(sys.argv[4])
-else: hop_s = win_s // 4
-if len(sys.argv) > 5: mode = sys.argv[5]
-else: mode = "default"
-
+samplerate = int(sys.argv[2]) if len(sys.argv) > 2 else 0
+win_s = int(sys.argv[3]) if len(sys.argv) > 3 else 512
+hop_s = int(sys.argv[4]) if len(sys.argv) > 4 else win_s // 4
+mode = sys.argv[5] if len(sys.argv) > 5 else "default"
 samplerate = 0
 if len( sys.argv ) > 2: samplerate = int(sys.argv[2])
 
@@ -75,8 +72,10 @@ set_xlabels_sample2time( ax, frames_read, samplerate)
 
 #plt.ylabel('spectral descriptor value')
 ax.xaxis.set_visible(True)
-title = 'MFCC for %s' % source_filename
-if mode == "delta": title = mode + " " + title
-elif mode == "ddelta": title = "double-delta" + " " + title
+title = f'MFCC for {source_filename}'
+if mode == "ddelta":
+    title = "double-delta" + " " + title
+elif mode == "delta":
+    title = f"{mode} {title}"
 wave.set_title(title)
 plt.show()

@@ -49,23 +49,22 @@ for method in methods:
 
 print("done computing")
 
-if 1:
-    import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
-    # times
-    ramp = np.arange(0, sin_length / hop_size).astype('float') * hop_size / samplerate
+# times
+ramp = np.arange(0, sin_length / hop_size).astype('float') * hop_size / samplerate
 
-    # plot each result
-    for method in methods:
-        plt.plot(ramp, cands[method], '.-', label=method)
+# plot each result
+for method in methods:
+    plt.plot(ramp, cands[method], '.-', label=method)
 
-    # plot ground truth
-    ramp = np.arange(0, sin_length).astype('float') / samplerate
-    plt.plot(ramp, freqs, ':', label = 'ground truth')
+# plot ground truth
+ramp = np.arange(0, sin_length).astype('float') / samplerate
+plt.plot(ramp, freqs, ':', label = 'ground truth')
 
-    plt.legend(loc='upper left')
+plt.legend(loc='upper left')
 
-    plt.xlabel('time (s)')
-    plt.ylabel('frequency (Hz)')
-    plt.ylim([0,2000])
-    plt.show()
+plt.xlabel('time (s)')
+plt.ylabel('frequency (Hz)')
+plt.ylim([0,2000])
+plt.show()

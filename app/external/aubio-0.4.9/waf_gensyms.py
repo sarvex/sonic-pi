@@ -24,15 +24,16 @@ class gen_sym_file(Task.Task):
         syms = set([])
         for m in reg_compiled.finditer(dump_output):
             syms.add(m.group('symbol'))
-        syms = list(syms)
-        syms.sort()
+        syms = sorted(syms)
         self.outputs[0].write('EXPORTS\n'+'\n'.join(syms))
 
 @TaskGen.feature('gensyms')
 @TaskGen.after_method('process_source','process_use','apply_link','process_uselib_local','propagate_uselib_vars')
 def gen_symbols(self):
     #sym_file = self.path.find_or_declare(self.target + '.def')
-    sym_file_name = os.path.splitext(self.link_task.outputs[0].abspath())[0] + '.def'
+    sym_file_name = (
+        f'{os.path.splitext(self.link_task.outputs[0].abspath())[0]}.def'
+    )
     sym_file = self.path.find_or_declare(sym_file_name)
     symtask = self.create_task('gen_sym_file', self.link_task.outputs, sym_file)
     self.add_install_files(install_to=self.link_task.inst_to, install_from=sym_file,

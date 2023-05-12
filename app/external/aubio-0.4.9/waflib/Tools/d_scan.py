@@ -12,7 +12,7 @@ def filter_comments(filename):
 	begin=0
 	while i<max:
 		c=txt[i]
-		if c=='"'or c=="'":
+		if c in ['"', "'"]:
 			buf.append(txt[begin:i])
 			delim=c
 			i+=1
@@ -89,26 +89,21 @@ class d_parser(object):
 				self.nodes.append(found)
 				self.waiting.append(found)
 				break
-		if not found:
-			if not filename in self.names:
-				self.names.append(filename)
+		if not found and filename not in self.names:
+			self.names.append(filename)
 	def get_strings(self,code):
 		self.module=''
 		lst=[]
-		mod_name=self.re_module.search(code)
-		if mod_name:
+		if mod_name := self.re_module.search(code):
 			self.module=re.sub('\s+','',mod_name.group(1))
-		import_iterator=self.re_import.finditer(code)
-		if import_iterator:
+		if import_iterator := self.re_import.finditer(code):
 			for import_match in import_iterator:
 				import_match_str=re.sub('\s+','',import_match.group(1))
-				bindings_match=self.re_import_bindings.match(import_match_str)
-				if bindings_match:
+				if bindings_match := self.re_import_bindings.match(import_match_str):
 					import_match_str=bindings_match.group(1)
 				matches=import_match_str.split(',')
 				for match in matches:
-					alias_match=self.re_import_alias.match(match)
-					if alias_match:
+					if alias_match := self.re_import_alias.match(match):
 						match=alias_match.group(1)
 					lst.append(match)
 		return lst

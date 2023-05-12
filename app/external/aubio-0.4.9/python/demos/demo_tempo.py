@@ -7,7 +7,7 @@ win_s = 512                 # fft size
 hop_s = win_s // 2          # hop size
 
 if len(sys.argv) < 2:
-    print("Usage: %s <filename> [samplerate]" % sys.argv[0])
+    print(f"Usage: {sys.argv[0]} <filename> [samplerate]")
     sys.exit(1)
 
 filename = sys.argv[1]
@@ -30,8 +30,7 @@ beats = []
 total_frames = 0
 while True:
     samples, read = s()
-    is_beat = o(samples)
-    if is_beat:
+    if is_beat := o(samples):
         this_beat = int(total_frames - delay + is_beat[0] * hop_s)
         print("%f" % (this_beat / float(samplerate)))
         beats.append(this_beat)

@@ -83,8 +83,7 @@ class PerlinNoiseFactory(object):
         either octaves or tiling.
         """
         if len(point) != self.dimension:
-            raise ValueError("Expected {} values, got {}".format(
-                self.dimension, len(point)))
+            raise ValueError(f"Expected {self.dimension} values, got {len(point)}")
 
         # Build a list of the (min, max) bounds in each dimension
         grid_coords = []
@@ -102,9 +101,10 @@ class PerlinNoiseFactory(object):
                 self.gradient[grid_point] = self._generate_gradient()
             gradient = self.gradient[grid_point]
 
-            dot = 0
-            for i in range(self.dimension):
-                dot += gradient[i] * (point[i] - grid_point[i])
+            dot = sum(
+                gradient[i] * (point[i] - grid_point[i])
+                for i in range(self.dimension)
+            )
             dots.append(dot)
 
         # Interpolate all those dot products together.  The interpolation is

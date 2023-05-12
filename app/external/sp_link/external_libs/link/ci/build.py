@@ -33,20 +33,12 @@ def build_cmake_args(args, build_dir):
         logging.error('CMake not found, please use the --cmake option')
         return None
 
-    cmake_args = []
-    cmake_args.append(args.cmake)
-    cmake_args.append('--build')
-    cmake_args.append(build_dir)
-
+    cmake_args = [args.cmake, '--build', build_dir]
     if args.configuration is not None:
-        cmake_args.append('--config')
-        cmake_args.append(args.configuration)
-
+        cmake_args.extend(('--config', args.configuration))
     if args.arguments is not None:
         cmake_args.append('--')
-        for arg in args.arguments.split():
-            cmake_args.append(arg)
-
+        cmake_args.extend(iter(args.arguments.split()))
     return cmake_args
 
 

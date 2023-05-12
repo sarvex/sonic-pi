@@ -7,8 +7,9 @@ from waflib import Task
 @extension('.lua')
 def add_lua(self,node):
 	tsk=self.create_task('luac',node,node.change_ext('.luac'))
-	inst_to=getattr(self,'install_path',self.env.LUADIR and'${LUADIR}'or None)
-	if inst_to:
+	if inst_to := getattr(
+		self, 'install_path', self.env.LUADIR and '${LUADIR}' or None
+	):
 		self.add_install_files(install_to=inst_to,install_from=tsk.outputs)
 	return tsk
 class luac(Task.Task):

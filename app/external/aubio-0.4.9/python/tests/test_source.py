@@ -17,9 +17,9 @@ default_test_sound = len(list_of_sounds) and list_of_sounds[0] or None
 all_params = []
 for soundfile in list_of_sounds:
     for hop_size in hop_sizes:
-        for samplerate in samplerates:
-            all_params.append((hop_size, samplerate, soundfile))
-
+        all_params.extend(
+            (hop_size, samplerate, soundfile) for samplerate in samplerates
+        )
 no_sounds_msg = "no test sounds, add some in 'python/tests/sounds/'!"
 
 _debug = False
@@ -67,10 +67,12 @@ class Test_aubio_source_read(object):
                 assert_equal(samples[read:], 0)
                 break
         if _debug:
-            result_str = "read {:.2f}s ({:d} frames"
-            result_str += " in {:d} blocks at {:d}Hz) from {:s}"
+            result_str = (
+                "read {:.2f}s ({:d} frames"
+                + " in {:d} blocks at {:d}Hz) from {:s}"
+            )
             result_params = total_frames / float(f.samplerate), total_frames, \
-                    total_frames//f.hop_size, f.samplerate, f.uri
+                        total_frames//f.hop_size, f.samplerate, f.uri
             print (result_str.format(*result_params))
         return total_frames
 
@@ -185,11 +187,13 @@ class Test_aubio_source_readmulti(Test_aubio_source_read):
                 assert_equal(samples[:,read:], 0)
                 break
         if _debug:
-            result_str = "read {:.2f}s ({:d} frames in {:d} channels"
-            result_str += " and {:d} blocks at {:d}Hz) from {:s}"
+            result_str = (
+                "read {:.2f}s ({:d} frames in {:d} channels"
+                + " and {:d} blocks at {:d}Hz) from {:s}"
+            )
             result_params = total_frames / float(f.samplerate), total_frames, \
-                    f.channels, int(total_frames/f.hop_size), \
-                    f.samplerate, f.uri
+                        f.channels, int(total_frames/f.hop_size), \
+                        f.samplerate, f.uri
             print (result_str.format(*result_params))
         return total_frames
 
@@ -201,10 +205,7 @@ class Test_aubio_source_with(object):
         hop_size = 2048
         with source(filename, 0, hop_size) as input_source:
             assert_equal(input_source.hop_size, hop_size)
-            #assert_equal(input_source.samplerate, samplerate)
-            total_frames = 0
-            for frames in input_source:
-                total_frames += frames.shape[-1]
+            total_frames = sum(frames.shape[-1] for frames in input_source)
             # check we read as many samples as we expected
             assert_equal(total_frames, input_source.duration)
 

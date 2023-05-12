@@ -14,7 +14,7 @@ def get_version_info():
         if not os.path.isfile(version_file):
             raise SystemError("VERSION file not found.")
 
-        for l in open(version_file).readlines():
+        for l in open(version_file):
             if l.startswith('AUBIO_MAJOR_VERSION'):
                 __version_info['AUBIO_MAJOR_VERSION'] = int(l.split('=')[1])
             if l.startswith('AUBIO_MINOR_VERSION'):
@@ -38,9 +38,8 @@ def get_version_info():
         # switch version status with commit sha in alpha releases
         if __version_info['AUBIO_VERSION_STATUS'] and \
                 '~alpha' in __version_info['AUBIO_VERSION_STATUS']:
-            AUBIO_GIT_SHA = get_git_revision_hash()
-            if AUBIO_GIT_SHA:
-                __version_info['AUBIO_VERSION_STATUS'] = '~git+' + AUBIO_GIT_SHA
+            if AUBIO_GIT_SHA := get_git_revision_hash():
+                __version_info['AUBIO_VERSION_STATUS'] = f'~git+{AUBIO_GIT_SHA}'
 
     return __version_info
 
@@ -59,12 +58,11 @@ def get_aubio_pyversion():
     aubio_version = get_aubio_version()
     if '~git+' in aubio_version:
         pep440str = aubio_version.replace('+', '.')
-        verstr = pep440str.replace('~git.', 'a0+')
+        return pep440str.replace('~git.', 'a0+')
     elif '~alpha' in aubio_version:
-        verstr = aubio_version.replace('~alpha', 'a0')
+        return aubio_version.replace('~alpha', 'a0')
     else:
-        verstr = aubio_version
-    return verstr
+        return aubio_version
 
 def get_git_revision_hash(short=True):
     # get commit id, with +mods if local tree is not clean
@@ -94,7 +92,6 @@ def get_git_revision_hash(short=True):
             gitsha += '+mods'
     except subprocess.CalledProcessError as e:
         sys.stderr.write('git command error :%s\n' % e)
-        pass
     return gitsha
 
 if __name__ == '__main__':

@@ -32,7 +32,7 @@ def get_emscripten_version(conf,cc):
 			key=lst[1]
 			val=lst[2]
 			k[key]=val
-	if not('__clang__'in k and'EMSCRIPTEN'in k):
+	if '__clang__' not in k or 'EMSCRIPTEN' not in k:
 		conf.fatal('Could not determine the emscripten compiler version.')
 	conf.env.DEST_OS='generic'
 	conf.env.DEST_BINFMT='elf'

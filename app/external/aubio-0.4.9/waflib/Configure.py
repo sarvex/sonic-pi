@@ -56,12 +56,14 @@ class ConfigurationContext(Context.Context):
 		if not out:
 			out=getattr(Context.g_module,Context.OUT,None)
 		if not out:
-			out=Options.lockfile.replace('.lock-waf_%s_'%sys.platform,'').replace('.lock-waf','')
+			out = Options.lockfile.replace(f'.lock-waf_{sys.platform}_', '').replace(
+				'.lock-waf', ''
+			)
 		out=os.path.realpath(out)
 		self.bldnode=(os.path.isabs(out)and self.root or self.path).make_node(out)
 		self.bldnode.mkdir()
 		if not os.path.isdir(self.bldnode.abspath()):
-			self.fatal('Could not create the build directory %s'%self.bldnode.abspath())
+			self.fatal(f'Could not create the build directory {self.bldnode.abspath()}')
 	def execute(self):
 		self.init_dirs()
 		self.cachedir=self.bldnode.make_node(Build.CACHE_DIR)
@@ -70,9 +72,8 @@ class ConfigurationContext(Context.Context):
 		self.logger=Logs.make_logger(path,'cfg')
 		app=getattr(Context.g_module,'APPNAME','')
 		if app:
-			ver=getattr(Context.g_module,'VERSION','')
-			if ver:
-				app="%s (%s)"%(app,ver)
+			if ver := getattr(Context.g_module, 'VERSION', ''):
+				app = f"{app} ({ver})"
 		params={'now':time.ctime(),'pyver':sys.hexversion,'systype':sys.platform,'args':" ".join(sys.argv),'wafver':Context.WAFVERSION,'abi':Context.ABI,'app':app}
 		self.to_log(conf_template%params)
 		self.msg('Setting top to',self.srcnode.abspath())
@@ -135,7 +136,7 @@ class ConfigurationContext(Context.Context):
 			if cache:
 				mag=(tool,id(self.env),tooldir,funs)
 				if mag in self.tool_cache:
-					self.to_log('(tool %s is already loaded, skipping)'%tool)
+					self.to_log(f'(tool {tool} is already loaded, skipping)')
 					continue
 				self.tool_cache.append(mag)
 			module=None
@@ -149,13 +150,11 @@ class ConfigurationContext(Context.Context):
 				raise
 			if funs is not None:
 				self.eval_rules(funs)
-			else:
-				func=getattr(module,'configure',None)
-				if func:
-					if type(func)is type(Utils.readf):
-						func(self)
-					else:
-						self.eval_rules(func)
+			elif func := getattr(module, 'configure', None):
+				if type(func)is type(Utils.readf):
+					func(self)
+				else:
+					self.eval_rules(func)
 			self.tools.append({'tool':tool,'tooldir':tooldir,'funs':funs})
 	def post_recurse(self,node):
 		super(ConfigurationContext,self).post_recurse(node)
@@ -195,15 +194,14 @@ def cmd_to_list(self,cmd):
 			return[cmd]
 		if os.sep=='/':
 			return shlex.split(cmd)
-		else:
-			try:
-				return shlex.split(cmd,posix=False)
-			except TypeError:
-				return shlex.split(cmd)
+		try:
+			return shlex.split(cmd,posix=False)
+		except TypeError:
+			return shlex.split(cmd)
 	return cmd
 @conf
 def check_waf_version(self,mini='1.9.99',maxi='2.1.0',**kw):
-	self.start_msg('Checking for waf version in %s-%s'%(str(mini),str(maxi)),**kw)
+	self.start_msg(f'Checking for waf version in {str(mini)}-{str(maxi)}', **kw)
 	ver=Context.HEXVERSION
 	if Utils.num2ver(mini)>ver:
 		self.fatal('waf version should be at least %r (%r found)'%(Utils.num2ver(mini),ver))
@@ -248,10 +246,7 @@ def find_program(self,filename,**kw):
 			ret=Utils.get_registry_app_path(Utils.winreg.HKEY_LOCAL_MACHINE,filename)
 		ret=self.cmd_to_list(ret)
 	if ret:
-		if len(ret)==1:
-			retmsg=ret[0]
-		else:
-			retmsg=ret
+		retmsg = ret[0] if len(ret)==1 else ret
 	else:
 		retmsg=False
 	self.msg('Checking for program %r'%msg,retmsg,**kw)
@@ -321,13 +316,12 @@ def run_build(self,*k,**kw):
 	kw['build_fun'](bld)
 	ret=-1
 	try:
-		try:
-			bld.compile()
-		except Errors.WafError:
-			ret='Test does not build: %s'%traceback.format_exc()
-			self.fatal(ret)
-		else:
-			ret=getattr(bld,'retval',0)
+		bld.compile()
+	except Errors.WafError:
+		ret = f'Test does not build: {traceback.format_exc()}'
+		self.fatal(ret)
+	else:
+		ret=getattr(bld,'retval',0)
 	finally:
 		if cachemode==1:
 			proj=ConfigSet.ConfigSet()
@@ -338,12 +332,10 @@ def run_build(self,*k,**kw):
 	return ret
 @conf
 def ret_msg(self,msg,args):
-	if isinstance(msg,str):
-		return msg
-	return msg(args)
+	return msg if isinstance(msg,str) else msg(args)
 @conf
 def test(self,*k,**kw):
-	if not'env'in kw:
+	if 'env' not in kw:
 		kw['env']=self.env.derive()
 	if kw.get('validate'):
 		kw['validate'](kw)

@@ -29,18 +29,16 @@ def gfortran_modifier_darwin(conf):
 @conf
 def gfortran_modifier_platform(conf):
 	dest_os=conf.env.DEST_OS or Utils.unversioned_sys_platform()
-	gfortran_modifier_func=getattr(conf,'gfortran_modifier_'+dest_os,None)
-	if gfortran_modifier_func:
+	if gfortran_modifier_func := getattr(
+		conf, f'gfortran_modifier_{dest_os}', None
+	):
 		gfortran_modifier_func()
 @conf
 def get_gfortran_version(conf,fc):
 	version_re=re.compile(r"GNU\s*Fortran",re.I).search
 	cmd=fc+['--version']
 	out,err=fc_config.getoutput(conf,cmd,stdin=False)
-	if out:
-		match=version_re(out)
-	else:
-		match=version_re(err)
+	match = version_re(out) if out else version_re(err)
 	if not match:
 		conf.fatal('Could not determine the compiler type')
 	cmd=fc+['-dM','-E','-']
@@ -58,8 +56,10 @@ def get_gfortran_version(conf,fc):
 			k[key]=val
 	def isD(var):
 		return var in k
+
 	def isT(var):
 		return var in k and k[var]!='0'
+
 	conf.env.FC_VERSION=(k['__GNUC__'],k['__GNUC_MINOR__'],k['__GNUC_PATCHLEVEL__'])
 def configure(conf):
 	conf.find_gfortran()

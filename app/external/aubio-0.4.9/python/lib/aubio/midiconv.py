@@ -89,16 +89,16 @@ def note2midi(note):
     octave = int(octave)
 
     if notename not in _valid_notenames:
-        raise ValueError("%s is not a valid note name" % notename)
+        raise ValueError(f"{notename} is not a valid note name")
     if modifier not in _valid_modifiers:
-        raise ValueError("%s is not a valid modifier" % modifier)
+        raise ValueError(f"{modifier} is not a valid modifier")
     if octave not in _valid_octaves:
-        raise ValueError("%s is not a valid octave" % octave)
+        raise ValueError(f"{octave} is not a valid octave")
 
     midi = (octave + 1) * 12 + _valid_notenames[notename] \
                              + _valid_modifiers[modifier]
     if midi > 127:
-        raise ValueError("%s is outside of the range C-2 to G8" % note)
+        raise ValueError(f"{note} is outside of the range C-2 to G8")
     return midi
 
 
@@ -134,7 +134,7 @@ def midi2note(midi):
     note2midi, miditofreq, freqtomidi
     """
     if not isinstance(midi, int_instances):
-        raise TypeError("an integer is required, got %s" % midi)
+        raise TypeError(f"an integer is required, got {midi}")
     if midi not in range(0, 128):
         msg = "an integer between 0 and 127 is excepted, got {:d}"
         raise ValueError(msg.format(midi))

@@ -141,20 +141,17 @@ class lazy_generator(object):
 	next=__next__
 is_win32=os.sep=='\\'or sys.platform=='win32'or os.name=='nt'
 def readf(fname,m='r',encoding='latin-1'):
-	if sys.hexversion>0x3000000 and not'b'in m:
+	if sys.hexversion > 0x3000000 and 'b' not in m:
 		m+='b'
 		with open(fname,m)as f:
 			txt=f.read()
-		if encoding:
-			txt=txt.decode(encoding)
-		else:
-			txt=txt.decode()
+		txt = txt.decode(encoding) if encoding else txt.decode()
 	else:
 		with open(fname,m)as f:
 			txt=f.read()
 	return txt
 def writef(fname,data,m='w',encoding='latin-1'):
-	if sys.hexversion>0x3000000 and not'b'in m:
+	if sys.hexversion > 0x3000000 and 'b' not in m:
 		data=data.encode(encoding)
 		m+='b'
 	with open(fname,m)as f:
@@ -176,20 +173,17 @@ def readf_win32(f,m='r',encoding='latin-1'):
 		fd=os.open(f,flags)
 	except OSError:
 		raise IOError('Cannot read from %r'%f)
-	if sys.hexversion>0x3000000 and not'b'in m:
+	if sys.hexversion > 0x3000000 and 'b' not in m:
 		m+='b'
 		with os.fdopen(fd,m)as f:
 			txt=f.read()
-		if encoding:
-			txt=txt.decode(encoding)
-		else:
-			txt=txt.decode()
+		txt = txt.decode(encoding) if encoding else txt.decode()
 	else:
 		with os.fdopen(fd,m)as f:
 			txt=f.read()
 	return txt
 def writef_win32(f,data,m='w',encoding='latin-1'):
-	if sys.hexversion>0x3000000 and not'b'in m:
+	if sys.hexversion > 0x3000000 and 'b' not in m:
 		data=data.encode(encoding)
 		m+='b'
 	flags=os.O_CREAT|os.O_TRUNC|os.O_WRONLY|os.O_NOINHERIT
@@ -254,28 +248,19 @@ def listdir_win32(s):
 	if len(s)==2 and s[1]==":":
 		s+=os.sep
 	if not os.path.isdir(s):
-		e=OSError('%s is not a directory'%s)
+		e = OSError(f'{s} is not a directory')
 		e.errno=errno.ENOENT
 		raise e
 	return os.listdir(s)
-listdir=os.listdir
-if is_win32:
-	listdir=listdir_win32
+listdir = listdir_win32 if is_win32 else os.listdir
 def num2ver(ver):
 	if isinstance(ver,str):
 		ver=tuple(ver.split('.'))
 	if isinstance(ver,tuple):
-		ret=0
-		for i in range(4):
-			if i<len(ver):
-				ret+=256**(3-i)*int(ver[i])
-		return ret
+		return sum(256**(3-i)*int(ver[i]) for i in range(4) if i<len(ver))
 	return ver
 def to_list(val):
-	if isinstance(val,str):
-		return val.split()
-	else:
-		return val
+	return val.split() if isinstance(val,str) else val
 def console_encoding():
 	try:
 		import ctypes
@@ -295,7 +280,7 @@ def split_path_unix(path):
 def split_path_cygwin(path):
 	if path.startswith('//'):
 		ret=path.split('/')[2:]
-		ret[0]='/'+ret[0]
+		ret[0] = f'/{ret[0]}'
 		return ret
 	return path.split('/')
 re_sp=re.compile('[/\\\\]+')
@@ -303,9 +288,7 @@ def split_path_win32(path):
 	if path.startswith('\\\\'):
 		ret=re_sp.split(path)[1:]
 		ret[0]='\\\\'+ret[0]
-		if ret[0]=='\\\\?':
-			return ret[1:]
-		return ret
+		return ret[1:] if ret[0]=='\\\\?' else ret
 	return re_sp.split(path)
 msysroot=None
 def split_path_msys(path):
@@ -319,10 +302,7 @@ def split_path_msys(path):
 if sys.platform=='cygwin':
 	split_path=split_path_cygwin
 elif is_win32:
-	if os.environ.get('MSYSTEM'):
-		split_path=split_path_msys
-	else:
-		split_path=split_path_win32
+	split_path = split_path_msys if os.environ.get('MSYSTEM') else split_path_win32
 else:
 	split_path=split_path_unix
 split_path.__doc__="""
@@ -344,16 +324,16 @@ def check_exe(name,env=None):
 		raise ValueError('Cannot execute an empty string!')
 	def is_exe(fpath):
 		return os.path.isfile(fpath)and os.access(fpath,os.X_OK)
+
 	fpath,fname=os.path.split(name)
 	if fpath and is_exe(name):
 		return os.path.abspath(name)
-	else:
-		env=env or os.environ
-		for path in env['PATH'].split(os.pathsep):
-			path=path.strip('"')
-			exe_file=os.path.join(path,name)
-			if is_exe(exe_file):
-				return os.path.abspath(exe_file)
+	env=env or os.environ
+	for path in env['PATH'].split(os.pathsep):
+		path=path.strip('"')
+		exe_file=os.path.join(path,name)
+		if is_exe(exe_file):
+			return os.path.abspath(exe_file)
 	return None
 def def_attrs(cls,**kw):
 	for k,v in kw.items():
@@ -393,7 +373,7 @@ def h_fun(fun):
 def h_cmd(ins):
 	if isinstance(ins,str):
 		ret=ins
-	elif isinstance(ins,list)or isinstance(ins,tuple):
+	elif isinstance(ins, (list, tuple)):
 		ret=str([h_cmd(x)for x in ins])
 	else:
 		ret=str(h_fun(ins))
@@ -436,11 +416,9 @@ def unversioned_sys_platform():
 		else:s=s.lower()
 	if s=='powerpc':
 		return'darwin'
-	if s=='win32'or s=='os2':
+	if s in ['win32', 'os2']:
 		return s
-	if s=='cli'and os.name=='nt':
-		return'win32'
-	return re.split('\d+$',s)[0]
+	return 'win32' if s=='cli'and os.name=='nt' else re.split('\d+$',s)[0]
 def nada(*k,**kw):
 	pass
 class Timer(object):
@@ -500,10 +478,13 @@ def get_registry_app_path(key,filename):
 		if os.path.isfile(result):
 			return result
 def lib64():
-	if os.sep=='/':
-		if platform.architecture()[0]=='64bit':
-			if os.path.exists('/usr/lib64')and not os.path.exists('/usr/lib32'):
-				return'64'
+	if (
+		os.sep == '/'
+		and platform.architecture()[0] == '64bit'
+		and os.path.exists('/usr/lib64')
+		and not os.path.exists('/usr/lib32')
+	):
+		return'64'
 	return''
 def sane_path(p):
 	return os.path.abspath(os.path.expanduser(p))
@@ -516,7 +497,7 @@ def get_process():
 		cmd=[sys.executable,'-c',readf(filepath)]
 		return subprocess.Popen(cmd,stdout=subprocess.PIPE,stdin=subprocess.PIPE,bufsize=0)
 def run_prefork_process(cmd,kwargs,cargs):
-	if not'env'in kwargs:
+	if 'env' not in kwargs:
 		kwargs['env']=dict(os.environ)
 	try:
 		obj=base64.b64encode(cPickle.dumps([cmd,kwargs,cargs]))
@@ -550,16 +531,16 @@ def run_prefork_process(cmd,kwargs,cargs):
 def lchown(path,user=-1,group=-1):
 	if isinstance(user,str):
 		import pwd
-		entry=pwd.getpwnam(user)
-		if not entry:
+		if entry := pwd.getpwnam(user):
+			user=entry[2]
+		else:
 			raise OSError('Unknown user %r'%user)
-		user=entry[2]
 	if isinstance(group,str):
 		import grp
-		entry=grp.getgrnam(group)
-		if not entry:
+		if entry := grp.getgrnam(group):
+			group=entry[2]
+		else:
 			raise OSError('Unknown group %r'%group)
-		group=entry[2]
 	return os.lchown(path,user,group)
 def run_regular_process(cmd,kwargs,cargs={}):
 	proc=subprocess.Popen(cmd,**kwargs)
@@ -598,7 +579,7 @@ def alloc_process_pool(n,force=False):
 	if not force:
 		n=max(n-len(process_pool),0)
 	try:
-		lst=[get_process()for x in range(n)]
+		lst = [get_process() for _ in range(n)]
 	except OSError:
 		run_process=run_regular_process
 		get_process=alloc_process_pool=nada

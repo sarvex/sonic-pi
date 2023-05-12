@@ -32,15 +32,17 @@ def parse_flags(self,line,uselib_store,env=None,force_static=False,posix=None):
 	lst=list(lex)
 	uselib=uselib_store
 	def app(var,val):
-		env.append_value('%s_%s'%(var,uselib),val)
+		env.append_value(f'{var}_{uselib}', val)
+
 	def appu(var,val):
-		env.append_unique('%s_%s'%(var,uselib),val)
+		env.append_unique(f'{var}_{uselib}', val)
+
 	static=False
 	while lst:
 		x=lst.pop(0)
 		st=x[:2]
 		ot=x[2:]
-		if st=='-I'or st=='/I':
+		if st in ['-I', '/I']:
 			if not ot:
 				ot=lst.pop(0)
 			appu('INCLUDES',ot)
@@ -76,7 +78,7 @@ def parse_flags(self,line,uselib_store,env=None,force_static=False,posix=None):
 			appu('FRAMEWORK',lst.pop(0))
 		elif x.startswith('-F'):
 			appu('FRAMEWORKPATH',x[2:])
-		elif x=='-Wl,-rpath'or x=='-Wl,-R':
+		elif x in ['-Wl,-rpath', '-Wl,-R']:
 			app('RPATH',lst.pop(0).lstrip('-Wl,'))
 		elif x.startswith('-Wl,-R,'):
 			app('RPATH',x[7:])
@@ -84,9 +86,9 @@ def parse_flags(self,line,uselib_store,env=None,force_static=False,posix=None):
 			app('RPATH',x[6:])
 		elif x.startswith('-Wl,-rpath,'):
 			app('RPATH',x[11:])
-		elif x=='-Wl,-Bstatic'or x=='-Bstatic':
+		elif x in ['-Wl,-Bstatic', '-Bstatic']:
 			static=True
-		elif x=='-Wl,-Bdynamic'or x=='-Bdynamic':
+		elif x in ['-Wl,-Bdynamic', '-Bdynamic']:
 			static=False
 		elif x.startswith('-Wl')or x in('-rdynamic','-pie'):
 			app('LINKFLAGS',x)
@@ -109,35 +111,35 @@ def parse_flags(self,line,uselib_store,env=None,force_static=False,posix=None):
 			self.to_log('Unhandled flag %r'%x)
 @conf
 def validate_cfg(self,kw):
-	if not'path'in kw:
+	if 'path' not in kw:
 		if not self.env.PKGCONFIG:
 			self.find_program('pkg-config',var='PKGCONFIG')
 		kw['path']=self.env.PKGCONFIG
 	s=('atleast_pkgconfig_version'in kw)+('modversion'in kw)+('package'in kw)
 	if s!=1:
 		raise ValueError('exactly one of atleast_pkgconfig_version, modversion and package must be set')
-	if not'msg'in kw:
+	if 'msg' not in kw:
 		if'atleast_pkgconfig_version'in kw:
 			kw['msg']='Checking for pkg-config version >= %r'%kw['atleast_pkgconfig_version']
 		elif'modversion'in kw:
 			kw['msg']='Checking for %r version'%kw['modversion']
 		else:
 			kw['msg']='Checking for %r'%(kw['package'])
-	if not'okmsg'in kw and not'modversion'in kw:
+	if 'okmsg' not in kw and 'modversion' not in kw:
 		kw['okmsg']='yes'
-	if not'errmsg'in kw:
+	if 'errmsg' not in kw:
 		kw['errmsg']='not found'
-	if'atleast_pkgconfig_version'in kw:
+	if 'atleast_pkgconfig_version'in kw:
 		pass
-	elif'modversion'in kw:
-		if not'uselib_store'in kw:
+	elif 'modversion'in kw:
+		if 'uselib_store' not in kw:
 			kw['uselib_store']=kw['modversion']
-		if not'define_name'in kw:
-			kw['define_name']='%s_VERSION'%Utils.quote_define_name(kw['uselib_store'])
+		if 'define_name' not in kw:
+			kw['define_name'] = f"{Utils.quote_define_name(kw['uselib_store'])}_VERSION"
 	else:
-		if not'uselib_store'in kw:
+		if 'uselib_store' not in kw:
 			kw['uselib_store']=Utils.to_list(kw['package'])[0].upper()
-		if not'define_name'in kw:
+		if 'define_name' not in kw:
 			kw['define_name']=self.have_define(kw['uselib_store'])
 @conf
 def exec_cfg(self,kw):
@@ -152,16 +154,17 @@ def exec_cfg(self,kw):
 		if kw.get('global_define',1):
 			self.define(define_name,1,False)
 		else:
-			self.env.append_unique('DEFINES_%s'%kw['uselib_store'],"%s=1"%define_name)
+			self.env.append_unique(f"DEFINES_{kw['uselib_store']}", f"{define_name}=1")
 		if kw.get('add_have_to_env',1):
 			self.env[define_name]=1
-	if'atleast_pkgconfig_version'in kw:
-		cmd=path+['--atleast-pkgconfig-version=%s'%kw['atleast_pkgconfig_version']]
+
+	if 'atleast_pkgconfig_version'in kw:
+		cmd = path + [f"--atleast-pkgconfig-version={kw['atleast_pkgconfig_version']}"]
 		self.cmd_and_log(cmd,env=env)
 		return
-	if'modversion'in kw:
+	if 'modversion'in kw:
 		version=self.cmd_and_log(path+['--modversion',kw['modversion']],env=env).strip()
-		if not'okmsg'in kw:
+		if 'okmsg' not in kw:
 			kw['okmsg']=version
 		self.define(kw['define_name'],version)
 		return version
@@ -170,7 +173,7 @@ def exec_cfg(self,kw):
 	if not defi:
 		defi=self.env.PKG_CONFIG_DEFINES or{}
 	for key,val in defi.items():
-		lst.append('--define-variable=%s=%s'%(key,val))
+		lst.append(f'--define-variable={key}={val}')
 	static=kw.get('force_static',False)
 	if'args'in kw:
 		args=Utils.to_list(kw['args'])
@@ -178,12 +181,12 @@ def exec_cfg(self,kw):
 			static=True
 		lst+=args
 	lst.extend(Utils.to_list(kw['package']))
-	if'variables'in kw:
+	if 'variables'in kw:
 		v_env=kw.get('env',self.env)
 		vars=Utils.to_list(kw['variables'])
 		for v in vars:
-			val=self.cmd_and_log(lst+['--variable='+v],env=env).strip()
-			var='%s_%s'%(kw['uselib_store'],v)
+			val = self.cmd_and_log(lst + [f'--variable={v}'], env=env).strip()
+			var = f"{kw['uselib_store']}_{v}"
 			v_env[var]=val
 		return
 	ret=self.cmd_and_log(lst,env=env)
@@ -202,7 +205,7 @@ def check_cfg(self,*k,**kw):
 		if'errmsg'in kw:
 			self.end_msg(kw['errmsg'],'YELLOW',**kw)
 		if Logs.verbose>1:
-			self.to_log('Command failure: %s'%e)
+			self.to_log(f'Command failure: {e}')
 		self.fatal('The configuration failed')
 	else:
 		if not ret:

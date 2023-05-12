@@ -161,15 +161,10 @@ for f in testfreqs:
     x = np.cos(2.*np.pi * np.arange(win_s) * f / samplerate)
 
     n_times = 1#00
-    for n in range(n_times):
+    for _ in range(n_times):
         yin, yinfast, yinfftslow, yinfft = compute_all(x)
-    if 0: # plot difference
-        plt.plot(yin-yinfast)
-        plt.tight_layout()
-        plt.show()
-    if 1:
-        plt.plot(yinfftslow-yinfft)
-        plt.tight_layout()
-        plt.show()
+    plt.plot(yinfftslow-yinfft)
+    plt.tight_layout()
+    plt.show()
     plot_all(yin, yinfast, yinfftslow, yinfft)
 plt.show()

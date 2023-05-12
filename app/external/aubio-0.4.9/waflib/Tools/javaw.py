@@ -7,7 +7,7 @@ from waflib import Task,Utils,Errors,Node
 from waflib.Configure import conf
 from waflib.TaskGen import feature,before_method,after_method,taskgen_method
 from waflib.Tools import ccroot
-ccroot.USELIB_VARS['javac']=set(['CLASSPATH','JAVACFLAGS'])
+ccroot.USELIB_VARS['javac'] = {'CLASSPATH', 'JAVACFLAGS'}
 SOURCE_RE='**/*.java'
 JAR_RE='**/*'
 class_check_source='''
@@ -53,7 +53,7 @@ def apply_java(self):
 		else:
 			y=self.path.find_dir(x)
 			if not y:
-				self.bld.fatal('Could not find the folder %s from %s'%(x,self.path))
+				self.bld.fatal(f'Could not find the folder {x} from {self.path}')
 		tmp.append(y)
 	tsk.srcdir=tmp
 	if getattr(self,'compat',None):
@@ -148,8 +148,7 @@ def jar_files(self):
 	tsk.set_outputs(destfile)
 	tsk.basedir=basedir
 	jaropts.append('-C')
-	jaropts.append(basedir.bldpath())
-	jaropts.append('.')
+	jaropts.extend((basedir.bldpath(), '.'))
 	tsk.env.JAROPTS=jaropts
 	tsk.env.JARCREATE=jarcreate
 	if getattr(self,'javac_task',None):
@@ -197,8 +196,7 @@ class javac(JTask):
 	vars=['CLASSPATH','JAVACFLAGS','JAVAC','OUTDIR']
 	def uid(self):
 		lst=[self.__class__.__name__,self.generator.outdir.abspath()]
-		for x in self.srcdir:
-			lst.append(x.abspath())
+		lst.extend(x.abspath() for x in self.srcdir)
 		return Utils.h_list(lst)
 	def runnable_status(self):
 		for t in self.run_after:
@@ -239,10 +237,17 @@ class javadoc(Task.Task):
 		classpath="".join(classpath)
 		self.last_cmd=lst=[]
 		lst.extend(Utils.to_list(env.JAVADOC))
-		lst.extend(['-d',self.generator.javadoc_output.abspath()])
-		lst.extend(['-sourcepath',srcpath])
-		lst.extend(['-classpath',classpath])
-		lst.extend(['-subpackages'])
+		lst.extend(
+			[
+				'-d',
+				self.generator.javadoc_output.abspath(),
+				'-sourcepath',
+				srcpath,
+				'-classpath',
+				classpath,
+				'-subpackages',
+			]
+		)
 		lst.extend(self.generator.javadoc_package)
 		lst=[x for x in lst if x]
 		self.generator.bld.cmd_and_log(lst,cwd=wd,env=env.env or None,quiet=0)
@@ -282,7 +287,7 @@ def check_java_class(self,classname,with_classpath=None):
 	cmd=self.env.JAVA+['-cp',classpath,'Test',classname]
 	self.to_log("%s\n"%str(cmd))
 	found=self.exec_command(cmd,shell=False)
-	self.msg('Checking for java class %s'%classname,not found)
+	self.msg(f'Checking for java class {classname}', not found)
 	shutil.rmtree(javatestdir,True)
 	return found
 @conf
@@ -292,9 +297,9 @@ def check_jni_headers(conf):
 	if not conf.env.JAVA_HOME:
 		conf.fatal('set JAVA_HOME in the system environment')
 	javaHome=conf.env.JAVA_HOME[0]
-	dir=conf.root.find_dir(conf.env.JAVA_HOME[0]+'/include')
+	dir = conf.root.find_dir(f'{conf.env.JAVA_HOME[0]}/include')
 	if dir is None:
-		dir=conf.root.find_dir(conf.env.JAVA_HOME[0]+'/../Headers')
+		dir = conf.root.find_dir(f'{conf.env.JAVA_HOME[0]}/../Headers')
 	if dir is None:
 		conf.fatal('JAVA_HOME does not seem to be set properly')
 	f=dir.ant_glob('**/(jni|jni_md).h')
@@ -302,8 +307,7 @@ def check_jni_headers(conf):
 	dir=conf.root.find_dir(conf.env.JAVA_HOME[0])
 	f=dir.ant_glob('**/*jvm.(so|dll|dylib)')
 	libDirs=[x.parent.abspath()for x in f]or[javaHome]
-	f=dir.ant_glob('**/*jvm.(lib)')
-	if f:
+	if f := dir.ant_glob('**/*jvm.(lib)'):
 		libDirs=[[x,y.parent.abspath()]for x in libDirs for y in f]
 	if conf.env.DEST_OS=='freebsd':
 		conf.env.append_unique('LINKFLAGS_JAVA','-pthread')

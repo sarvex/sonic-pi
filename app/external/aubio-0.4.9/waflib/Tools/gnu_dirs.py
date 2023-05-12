@@ -52,15 +52,14 @@ def options(opt):
 	inst_dir=opt.add_option_group('Installation prefix','By default, "waf install" will put the files in\
  "/usr/local/bin", "/usr/local/lib" etc. An installation prefix other\
  than "/usr/local" can be given using "--prefix", for example "--prefix=$HOME"')
-	for k in('--prefix','--destdir'):
-		option=opt.parser.get_option(k)
-		if option:
+	for k in ('--prefix','--destdir'):
+		if option := opt.parser.get_option(k):
 			opt.parser.remove_option(k)
 			inst_dir.add_option(option)
 	inst_dir.add_option('--exec-prefix',help='installation prefix for binaries [PREFIX]',default='',dest='EXEC_PREFIX')
 	dirs_options=opt.add_option_group('Installation directories')
 	for name,help,default in _options:
-		option_name='--'+name
+		option_name = f'--{name}'
 		str_default=default
 		str_help='%s [%s]'%(help,re.sub(r'\$\{([^}]+)\}',r'\1',str_default))
 		dirs_options.add_option(option_name,help=str_help,default='',dest=name.upper())

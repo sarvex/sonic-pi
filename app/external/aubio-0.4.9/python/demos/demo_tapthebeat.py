@@ -14,6 +14,7 @@ instance using youtube-dl (`pip install youtube-dl`):
 
 """
 
+
 import sys
 import time
 import pyaudio
@@ -25,7 +26,7 @@ hop_s = win_s // 2          # hop size
 
 # parse command line arguments
 if len(sys.argv) < 2:
-    print("Usage: %s <filename> [samplerate]" % sys.argv[0])
+    print(f"Usage: {sys.argv[0]} <filename> [samplerate]")
     sys.exit(1)
 
 filename = sys.argv[1]
@@ -46,10 +47,8 @@ click = 0.7 * np.sin(2. * np.pi * np.arange(hop_s) / hop_s * samplerate / 3000.)
 # pyaudio callback
 def pyaudio_callback(_in_data, _frame_count, _time_info, _status):
     samples, read = a_source()
-    is_beat = a_tempo(samples)
-    if is_beat:
+    if is_beat := a_tempo(samples):
         samples += click
-        #print ('tick') # avoid print in audio callback
     audiobuf = samples.tobytes()
     if read < hop_s:
         return (audiobuf, pyaudio.paComplete)

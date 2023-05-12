@@ -5,10 +5,7 @@ from _tools import parametrize
 from aubio import fvec, cvec, pvoc, float_type
 import numpy as np
 
-if float_type == 'float32':
-    max_sq_error = 1.e-12
-else:
-    max_sq_error = 1.e-29
+max_sq_error = 1.e-12 if float_type == 'float32' else 1.e-29
 
 def create_sine(hop_s, freq, samplerate):
     t = np.arange(hop_s).astype(float_type)

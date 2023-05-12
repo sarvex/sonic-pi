@@ -47,5 +47,5 @@ def configure(conf):
 	conf.load('d')
 	conf.common_flags_dmd()
 	conf.d_platform_flags()
-	if str(conf.env.D).find('ldc')>-1:
+	if 'ldc' in str(conf.env.D):
 		conf.common_flags_ldc()

@@ -71,11 +71,10 @@ class aubio_fft_test_case(TestCase):
             # phase can be pi or -pi, as it is not unwrapped
             #assert_almost_equal ( abs(fftgrain.phas[1:-1]) , pi, decimal = 6 )
             assert_almost_equal ( fftgrain.phas[0], pi, decimal = 6)
-            assert_almost_equal ( np.fmod(fftgrain.phas[-1], pi), 0, decimal = 6)
         else:
             #assert_equal ( fftgrain.phas[1:-1] == 0, True)
             assert_equal ( fftgrain.phas[0], 0)
-            assert_almost_equal ( np.fmod(fftgrain.phas[-1], pi), 0, decimal = 6)
+        assert_almost_equal ( np.fmod(fftgrain.phas[-1], pi), 0, decimal = 6)
         # now check the resynthesis
         synthgrain = f.rdo ( fftgrain )
         #self.plot_this ( fftgrain.phas.T )

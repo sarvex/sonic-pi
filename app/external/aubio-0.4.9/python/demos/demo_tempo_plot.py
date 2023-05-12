@@ -7,7 +7,7 @@ win_s = 512                 # fft size
 hop_s = win_s // 2          # hop size
 
 if len(sys.argv) < 2:
-    print("Usage: %s <filename> [samplerate]" % sys.argv[0])
+    print(f"Usage: {sys.argv[0]} <filename> [samplerate]")
     sys.exit(1)
 
 filename = sys.argv[1]
@@ -30,8 +30,7 @@ beats = []
 total_frames = 0
 while True:
     samples, read = s()
-    is_beat = o(samples)
-    if is_beat:
+    if is_beat := o(samples):
         this_beat = o.get_last_s()
         beats.append(this_beat)
     total_frames += read
@@ -43,7 +42,7 @@ if len(beats) > 1:
     import matplotlib.pyplot as plt
     bpms = 60./ diff(beats)
     print('mean period: %.2fbpm, median: %.2fbpm' % (mean(bpms), median(bpms)))
-    print('plotting %s' % filename)
+    print(f'plotting {filename}')
     plt1 = plt.axes([0.1, 0.75, 0.8, 0.19])
     plt2 = plt.axes([0.1, 0.1, 0.8, 0.65], sharex = plt1)
     plt.rc('lines',linewidth='.8')
@@ -76,4 +75,4 @@ if len(beats) > 1:
 
 else:
     print('mean period: %.2fbpm, median: %.2fbpm' % (0, 0))
-    print('plotting %s' % filename)
+    print(f'plotting {filename}')

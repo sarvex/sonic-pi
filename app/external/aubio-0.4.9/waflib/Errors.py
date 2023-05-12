@@ -27,8 +27,7 @@ class BuildError(WafError):
 	def format_error(self):
 		lst=['Build failed']
 		for tsk in self.tasks:
-			txt=tsk.format_error()
-			if txt:
+			if txt := tsk.format_error():
 				lst.append(txt)
 		return'\n'.join(lst)
 class ConfigurationError(WafError):

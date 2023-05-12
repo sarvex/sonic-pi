@@ -15,7 +15,7 @@ class task_gen(object):
 		self.meths=[]
 		self.features=[]
 		self.tasks=[]
-		if not'bld'in kw:
+		if 'bld' not in kw:
 			self.env=ConfigSet.ConfigSet()
 			self.idx=0
 			self.path=None
@@ -38,11 +38,12 @@ class task_gen(object):
 	def __str__(self):
 		return"<task_gen %r declared in %s>"%(self.name,self.path.abspath())
 	def __repr__(self):
-		lst=[]
-		for x in self.__dict__:
-			if x not in('env','bld','compiled_tasks','tasks'):
-				lst.append("%s=%s"%(x,repr(getattr(self,x))))
-		return"bld(%s) in %s"%(", ".join(lst),self.path.abspath())
+		lst = [
+			f"{x}={repr(getattr(self, x))}"
+			for x in self.__dict__
+			if x not in ('env', 'bld', 'compiled_tasks', 'tasks')
+		]
+		return f'bld({", ".join(lst)}) in {self.path.abspath()}'
 	def get_cwd(self):
 		return self.bld.bldnode
 	def get_name(self):
@@ -59,10 +60,7 @@ class task_gen(object):
 		self._name=name
 	name=property(get_name,set_name)
 	def to_list(self,val):
-		if isinstance(val,str):
-			return val.split()
-		else:
-			return val
+		return val.split() if isinstance(val,str) else val
 	def post(self):
 		if getattr(self,'posted',None):
 			return False
@@ -71,16 +69,12 @@ class task_gen(object):
 		keys.update(feats['*'])
 		self.features=Utils.to_list(self.features)
 		for x in self.features:
-			st=feats[x]
-			if st:
+			if st := feats[x]:
 				keys.update(st)
-			elif not x in Task.classes:
+			elif x not in Task.classes:
 				Logs.warn('feature %r does not exist - bind at least one method to it?',x)
-		prec={}
 		prec_tbl=self.prec
-		for x in prec_tbl:
-			if x in keys:
-				prec[x]=prec_tbl[x]
+		prec = {x: prec_tbl[x] for x in prec_tbl if x in keys}
 		tmp=[]
 		for a in keys:
 			for x in prec.values():
@@ -101,16 +95,17 @@ class task_gen(object):
 			else:
 				del prec[e]
 				for x in nlst:
-					for y in prec:
-						if x in prec[y]:
+					for y, value in prec.items():
+						if x in value:
 							break
 					else:
 						tmp.append(x)
 						tmp.sort(reverse=True)
 		if prec:
 			buf=['Cycle detected in the method execution:']
-			for k,v in prec.items():
-				buf.append('- %s after %s'%(k,[x for x in v if x in prec]))
+			buf.extend(
+				f'- {k} after {[x for x in v if x in prec]}' for k, v in prec.items()
+			)
 			raise Errors.WafError('\n'.join(buf))
 		self.meths=out
 		Logs.debug('task_gen: posting %s %d',self,id(self))
@@ -385,6 +380,7 @@ class subst_pc(Task.Task):
 				lst.append(g(1))
 				return"%%(%s)s"%g(1)
 			return''
+
 		code=getattr(self.generator,'re_m4',re_m4).sub(repl,code)
 		try:
 			d=self.generator.dct
@@ -395,7 +391,7 @@ class subst_pc(Task.Task):
 				try:
 					tmp=''.join(tmp)
 				except TypeError:
-					tmp=str(tmp)
+					tmp = tmp
 				d[x]=tmp
 		code=code%d
 		self.outputs[0].write(code,encoding=getattr(self.generator,'encoding','latin-1'))
@@ -457,15 +453,13 @@ def process_subst(self):
 		if not a:
 			raise Errors.WafError('could not find %r for %r'%(x,self))
 		tsk=self.create_task('subst',a,b)
-		for k in('after','before','ext_in','ext_out'):
-			val=getattr(self,k,None)
-			if val:
+		for k in ('after', 'before', 'ext_in', 'ext_out'):
+			if val := getattr(self, k, None):
 				setattr(tsk,k,val)
 		for xt in HEADER_EXTS:
 			if b.name.endswith(xt):
 				tsk.ext_in=tsk.ext_in+['.h']
 				break
-		inst_to=getattr(self,'install_path',None)
-		if inst_to:
+		if inst_to := getattr(self, 'install_path', None):
 			self.install_task=self.add_install_files(install_to=inst_to,install_from=b,chmod=getattr(self,'chmod',Utils.O644))
 	self.source=[]

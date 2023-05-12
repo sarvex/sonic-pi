@@ -17,8 +17,9 @@ many_files = 300 # 256 opened files is too much
 all_params = []
 for soundfile in list_of_sounds:
     for hop_size in hop_sizes:
-        for samplerate in samplerates:
-            all_params.append((hop_size, samplerate, soundfile))
+        all_params.extend(
+            (hop_size, samplerate, soundfile) for samplerate in samplerates
+        )
 
 class Test_aubio_sink(object):
 
@@ -49,7 +50,7 @@ class Test_aubio_sink(object):
         tmpdir = mkdtemp()
         sink_list = []
         for i in range(many_files):
-            path = os.path.join(tmpdir, 'f-' + str(i) + '.wav')
+            path = os.path.join(tmpdir, f'f-{str(i)}.wav')
             g = sink(path, 0)
             sink_list.append(g)
             write = 32

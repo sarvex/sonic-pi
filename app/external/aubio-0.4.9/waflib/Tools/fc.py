@@ -6,10 +6,26 @@ from waflib import Utils,Task,Errors
 from waflib.Tools import ccroot,fc_config,fc_scan
 from waflib.TaskGen import extension
 from waflib.Configure import conf
-ccroot.USELIB_VARS['fc']=set(['FCFLAGS','DEFINES','INCLUDES','FCPPFLAGS'])
-ccroot.USELIB_VARS['fcprogram_test']=ccroot.USELIB_VARS['fcprogram']=set(['LIB','STLIB','LIBPATH','STLIBPATH','LINKFLAGS','RPATH','LINKDEPS'])
-ccroot.USELIB_VARS['fcshlib']=set(['LIB','STLIB','LIBPATH','STLIBPATH','LINKFLAGS','RPATH','LINKDEPS'])
-ccroot.USELIB_VARS['fcstlib']=set(['ARFLAGS','LINKDEPS'])
+ccroot.USELIB_VARS['fc'] = {'FCFLAGS', 'DEFINES', 'INCLUDES', 'FCPPFLAGS'}
+ccroot.USELIB_VARS['fcprogram_test'] = ccroot.USELIB_VARS['fcprogram'] = {
+	'LIB',
+	'STLIB',
+	'LIBPATH',
+	'STLIBPATH',
+	'LINKFLAGS',
+	'RPATH',
+	'LINKDEPS',
+}
+ccroot.USELIB_VARS['fcshlib'] = {
+	'LIB',
+	'STLIB',
+	'LIBPATH',
+	'STLIBPATH',
+	'LINKFLAGS',
+	'RPATH',
+	'LINKDEPS',
+}
+ccroot.USELIB_VARS['fcstlib'] = {'ARFLAGS', 'LINKDEPS'}
 @extension('.f','.F','.f90','.F90','.for','.FOR','.f95','.F95','.f03','.F03','.f08','.F08')
 def fc_hook(self,node):
 	return self.create_compiled_task('fc',node)
@@ -67,7 +83,7 @@ class fc(Task.Task):
 					name=bld.modfile(x.replace('USE@',''))
 					node=bld.srcnode.find_resource(name)
 					if node and node not in tsk.outputs:
-						if not node in bld.node_deps[key]:
+						if node not in bld.node_deps[key]:
 							bld.node_deps[key].append(node)
 						ins[node].add(tsk)
 		for k in ins.keys():

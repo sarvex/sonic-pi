@@ -8,7 +8,7 @@ from waflib.Tools.ccroot import link_task,stlink_task
 @TaskGen.extension('.cpp','.cc','.cxx','.C','.c++')
 def cxx_hook(self,node):
 	return self.create_compiled_task('cxx',node)
-if not'.c'in TaskGen.task_gen.mappings:
+if '.c' not in TaskGen.task_gen.mappings:
 	TaskGen.task_gen.mappings['.c']=TaskGen.task_gen.mappings['.cpp']
 class cxx(Task.Task):
 	run_str='${CXX} ${ARCH_ST:ARCH} ${CXXFLAGS} ${FRAMEWORKPATH_ST:FRAMEWORKPATH} ${CPPPATH_ST:INCPATHS} ${DEFINES_ST:DEFINES} ${CXX_SRC_F}${SRC} ${CXX_TGT_F}${TGT[0].abspath()} ${CPPFLAGS}'

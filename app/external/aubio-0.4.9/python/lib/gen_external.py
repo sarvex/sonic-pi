@@ -111,7 +111,7 @@ def get_cpp_output(header=header, usedouble=False):
         macros += [('HAVE_AUBIO_DOUBLE', 1)]
 
     if not os.path.isfile(header):
-        raise Exception("could not find include file " + header)
+        raise Exception(f"could not find include file {header}")
 
     includes = [os.path.dirname(header)]
     cpp_cmd += distutils.ccompiler.gen_preprocess_options(macros, includes)
@@ -150,18 +150,15 @@ def filter_cpp_output(cpp_raw_output):
         if i >= len(cpp_output):
             break
         if ('{' in cpp_output[i - 1]) and ('}' not in cpp_output[i - 1]) or (';' not in cpp_output[i - 1]):
-            cpp_output[i] = cpp_output[i - 1] + ' ' + cpp_output[i]
+            cpp_output[i] = f'{cpp_output[i - 1]} {cpp_output[i]}'
             cpp_output.pop(i - 1)
         elif ('}' in cpp_output[i]):
-            cpp_output[i] = cpp_output[i - 1] + ' ' + cpp_output[i]
+            cpp_output[i] = f'{cpp_output[i - 1]} {cpp_output[i]}'
             cpp_output.pop(i - 1)
         else:
             i += 1
 
-    # clean pointer notations
-    tmp = []
-    for l in cpp_output:
-        tmp += [l.replace(' *', ' * ')]
+    tmp = [l.replace(' *', ' * ') for l in cpp_output]
     cpp_output = tmp
 
     return cpp_output
@@ -172,8 +169,7 @@ def get_cpp_objects_from_c_declarations(c_declarations, skip_objects=None):
         skip_objects = default_skip_objects
     typedefs = filter(lambda y: y.startswith('typedef struct _aubio'), c_declarations)
     cpp_objects = [a.split()[3][:-1] for a in typedefs]
-    cpp_objects_filtered = filter(lambda y: not y[6:-2] in skip_objects, cpp_objects)
-    return cpp_objects_filtered
+    return filter(lambda y: y[6:-2] not in skip_objects, cpp_objects)
 
 
 def get_all_func_names_from_lib(lib):
@@ -189,11 +185,10 @@ def get_all_func_names_from_lib(lib):
                 if len(e) < 2:
                     continue  # not a function
                 fname_part = e[0].strip().split(' ')
-                fname = fname_part[-1]
-                if fname:
+                if fname := fname_part[-1]:
                     res += [fname]
                 else:
-                    raise NameError('gen_lib : weird function: ' + str(e))
+                    raise NameError(f'gen_lib : weird function: {str(e)}')
 
     return res
 
@@ -212,15 +207,25 @@ def generate_lib_from_c_declarations(cpp_objects, c_declarations):
         if o[:6] == 'aubio_':
             shortname = o[6:-2]  # without aubio_ prefix and _t suffix
 
-        lib[shortname] = {'struct': [], 'new': [], 'del': [], 'do': [], 'rdo': [], 'get': [], 'set': [], 'other': []}
-        lib[shortname]['longname'] = o
-        lib[shortname]['shortname'] = shortname
-
+        lib[shortname] = {
+            'struct': [],
+            'new': [],
+            'del': [],
+            'do': [],
+            'rdo': [],
+            'get': [],
+            'set': [],
+            'other': [],
+            'longname': o,
+            'shortname': shortname,
+        }
         fullshortname = o[:-2]  # name without _t suffix
 
         for fn in c_declarations:
             func_name = fn.split('(')[0].strip().split(' ')[-1]
-            if func_name.startswith(fullshortname + '_') or func_name.endswith(fullshortname):
+            if func_name.startswith(f'{fullshortname}_') or func_name.endswith(
+                fullshortname
+            ):
                 # print "found", shortname, "in", fn
                 if 'typedef struct ' in fn:
                     lib[shortname]['struct'].append(fn)
@@ -279,15 +284,17 @@ def generate_external(header=header, output_path=output_path, usedouble=False, o
         out = source_header
         mapped = MappedObject(lib[o], usedouble=usedouble)
         out += mapped.gen_code()
-        output_file = os.path.join(output_path, 'gen-%s.c' % o)
+        output_file = os.path.join(output_path, f'gen-{o}.c')
         with open(output_file, 'w') as f:
             f.write(out)
-            print("wrote %s" % output_file)
+            print(f"wrote {output_file}")
             sources_list.append(output_file)
 
     out = source_header
     out += "#include \"aubio-generated.h\""
-    check_types = "\n     ||  ".join(["PyType_Ready(&Py_%sType) < 0" % o for o in lib])
+    check_types = "\n     ||  ".join(
+        [f"PyType_Ready(&Py_{o}Type) < 0" for o in lib]
+    )
     out += """
 
 int generated_types_ready (void)
@@ -310,7 +317,7 @@ void add_generated_objects ( PyObject *m )
     output_file = os.path.join(output_path, 'aubio-generated.c')
     with open(output_file, 'w') as f:
         f.write(out)
-        print("wrote %s" % output_file)
+        print(f"wrote {output_file}")
         sources_list.append(output_file)
 
     objlist = "".join(["extern PyTypeObject Py_%sType;\n" % p for p in lib])
@@ -333,8 +340,8 @@ void add_generated_objects( PyObject *m );
     output_file = os.path.join(output_path, 'aubio-generated.h')
     with open(output_file, 'w') as f:
         f.write(out)
-        print("wrote %s" % output_file)
-        # no need to add header to list of sources
+        print(f"wrote {output_file}")
+            # no need to add header to list of sources
 
     return sorted(sources_list)
 

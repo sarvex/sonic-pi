@@ -48,7 +48,7 @@ def set_xlabels_sample2time(ax, latest_sample, samplerate):
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     if len(sys.argv) < 2:
-        print("Usage: %s <filename>" % sys.argv[0])
+        print(f"Usage: {sys.argv[0]} <filename>")
     else:
         for soundfile in sys.argv[1:]:
             get_waveform_plot(soundfile)

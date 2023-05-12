@@ -5,7 +5,7 @@ from aubio import source, sink, pvoc
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        print('usage: %s <inputfile> <outputfile>' % sys.argv[0])
+        print(f'usage: {sys.argv[0]} <inputfile> <outputfile>')
         sys.exit(1)
     samplerate = 44100
     f = source(sys.argv[1], samplerate, 256)

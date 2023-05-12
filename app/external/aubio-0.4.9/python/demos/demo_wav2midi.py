@@ -12,7 +12,7 @@ from aubio import source, notes
 from mido import Message, MetaMessage, MidiFile, MidiTrack, second2tick, bpm2tempo
 
 if len(sys.argv) < 3:
-    print("Usage: %s <filename> <output> [samplerate]" % sys.argv[0])
+    print(f"Usage: {sys.argv[0]} <filename> <output> [samplerate]")
     sys.exit(1)
 
 filename = sys.argv[1]

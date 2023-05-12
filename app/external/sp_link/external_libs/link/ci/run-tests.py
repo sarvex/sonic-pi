@@ -26,10 +26,7 @@ def parse_args():
 
 def get_system_exe_extension():
     # Should return 'win32' even on 64-bit Windows
-    if sys.platform == 'win32':
-        return '.exe'
-    else:
-        return ''
+    return '.exe' if sys.platform == 'win32' else ''
 
 
 def find_exe(name, path):
@@ -45,10 +42,11 @@ def build_test_exe_args(args, build_dir):
 
     test_exe = find_exe(args.target + get_system_exe_extension(), build_dir)
     if not os.path.exists(test_exe):
-        logging.error('Could not find test executable for target {}, '
-                      'did you forget to build?'.format(args.target))
+        logging.error(
+            f'Could not find test executable for target {args.target}, did you forget to build?'
+        )
     else:
-        logging.debug('Test executable is: {}'.format(test_exe))
+        logging.debug(f'Test executable is: {test_exe}')
 
     test_exe_args = [test_exe]
 
@@ -84,7 +82,7 @@ def run_tests(args):
         return 1
 
     logging.info(test_exe_args)
-    logging.info('Running Tests for {}'.format(args.target))
+    logging.info(f'Running Tests for {args.target}')
     return call(test_exe_args, env=env)
 
 

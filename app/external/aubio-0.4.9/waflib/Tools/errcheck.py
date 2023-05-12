@@ -56,11 +56,8 @@ def check_invalid_constraints(self):
 	for(x,y)in TaskGen.task_gen.prec.items():
 		feat.add(x)
 		feat.union(set(y))
-	ext=set()
-	for x in TaskGen.task_gen.mappings.values():
-		ext.add(x.__name__)
-	invalid=ext&feat
-	if invalid:
+	ext = {x.__name__ for x in TaskGen.task_gen.mappings.values()}
+	if invalid := ext & feat:
 		Logs.error('The methods %r have invalid annotations:  @extension <-> @feature/@before_method/@after_method',list(invalid))
 	for cls in list(Task.classes.values()):
 		if sys.hexversion>0x3000000 and issubclass(cls,Task.Task)and isinstance(cls.hcode,str):
@@ -76,11 +73,12 @@ def replace(m):
 	def call(self,*k,**kw):
 		ret=oldcall(self,*k,**kw)
 		for x in typos:
-			if x in kw:
-				if x=='iscopy'and'subst'in getattr(self,'features',''):
-					continue
+			if x in kw and (
+				x != 'iscopy' or 'subst' not in getattr(self, 'features', '')
+			):
 				Logs.error('Fix the typo %r -> %r on %r',x,typos[x],ret)
 		return ret
+
 	setattr(Build.BuildContext,m,call)
 def enhance_lib():
 	for m in meths_typos:
@@ -95,6 +93,7 @@ def enhance_lib():
 				if'.'in sp:
 					Logs.error("In ant_glob pattern %r: '.' means 'one dot', not 'current directory'",k[0])
 		return self.old_ant_glob(*k,**kw)
+
 	Node.Node.old_ant_glob=Node.Node.ant_glob
 	Node.Node.ant_glob=ant_glob
 	def ant_iter(self,accept=None,maxdepth=25,pats=[],dir=False,src=True,remove=True,quiet=False):
@@ -106,6 +105,7 @@ def enhance_lib():
 			except AttributeError:
 				pass
 		return self.old_ant_iter(accept,maxdepth,pats,dir,src,remove,quiet)
+
 	Node.Node.old_ant_iter=Node.Node.ant_iter
 	Node.Node.ant_iter=ant_iter
 	old=Task.is_before
@@ -114,17 +114,23 @@ def enhance_lib():
 		if ret and old(t2,t1):
 			Logs.error('Contradictory order constraints in classes %r %r',t1,t2)
 		return ret
+
 	Task.is_before=is_before
 	def check_err_features(self):
 		lst=self.to_list(self.features)
 		if'shlib'in lst:
 			Logs.error('feature shlib -> cshlib, dshlib or cxxshlib')
-		for x in('c','cxx','d','fc'):
-			if not x in lst and lst and lst[0]in[x+y for y in('program','shlib','stlib')]:
+		for x in ('c','cxx','d','fc'):
+			if (
+				x not in lst
+				and lst
+				and lst[0] in [x + y for y in ('program', 'shlib', 'stlib')]
+			):
 				Logs.error('%r features is probably missing %r',self,x)
+
 	TaskGen.feature('*')(check_err_features)
 	def check_err_order(self):
-		if not hasattr(self,'rule')and not'subst'in Utils.to_list(self.features):
+		if not hasattr(self, 'rule') and 'subst' not in Utils.to_list(self.features):
 			for x in('before','after','ext_in','ext_out'):
 				if hasattr(self,x):
 					Logs.warn('Erroneous order constraint %r on non-rule based task generator %r',x,self)
@@ -133,6 +139,7 @@ def enhance_lib():
 				for y in self.to_list(getattr(self,x,[])):
 					if not Task.classes.get(y):
 						Logs.error('Erroneous order constraint %s=%r on %r (no such class)',x,y,self)
+
 	TaskGen.feature('*')(check_err_order)
 	def check_compile(self):
 		check_invalid_constraints(self)
@@ -141,6 +148,7 @@ def enhance_lib():
 		finally:
 			check_same_targets(self)
 		return ret
+
 	Build.BuildContext.orig_compile=Build.BuildContext.compile
 	Build.BuildContext.compile=check_compile
 	def use_rec(self,name,**kw):
@@ -159,10 +167,11 @@ def enhance_lib():
 					msg+=" %r uses %r (try 'waf -v -v' for the full error)"%(self.name,name)
 				raise Errors.WafError(msg)
 		self.orig_use_rec(name,**kw)
+
 	TaskGen.task_gen.orig_use_rec=TaskGen.task_gen.use_rec
 	TaskGen.task_gen.use_rec=use_rec
 	def _getattr(self,name,default=None):
-		if name=='append'or name=='add':
+		if name in ['append', 'add']:
 			raise Errors.WafError('env.append and env.add do not exist: use env.append_value/env.append_unique')
 		elif name=='prepend':
 			raise Errors.WafError('env.prepend does not exist: use env.prepend_value')
@@ -170,6 +179,7 @@ def enhance_lib():
 			return super(ConfigSet.ConfigSet,self).__getattr__(name,default)
 		else:
 			return self[name]
+
 	ConfigSet.ConfigSet.__getattr__=_getattr
 def options(opt):
 	enhance_lib()

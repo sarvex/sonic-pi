@@ -10,7 +10,7 @@ from waflib.TaskGen import extension,feature,before_method
 @feature('perlext')
 def init_perlext(self):
 	self.uselib=self.to_list(getattr(self,'uselib',[]))
-	if not'PERLEXT'in self.uselib:
+	if 'PERLEXT' not in self.uselib:
 		self.uselib.append('PERLEXT')
 	self.env.cshlib_PATTERN=self.env.cxxshlib_PATTERN=self.env.perlext_PATTERN
 @extension('.xs')
@@ -25,17 +25,14 @@ class xsubpp(Task.Task):
 @conf
 def check_perl_version(self,minver=None):
 	res=True
-	if minver:
-		cver='.'.join(map(str,minver))
-	else:
-		cver=''
-	self.start_msg('Checking for minimum perl version %s'%cver)
+	cver = '.'.join(map(str,minver)) if minver else ''
+	self.start_msg(f'Checking for minimum perl version {cver}')
 	perl=self.find_program('perl',var='PERL',value=getattr(Options.options,'perlbinary',None))
 	version=self.cmd_and_log(perl+["-e",'printf \"%vd\", $^V'])
 	if not version:
 		res=False
 		version="Unknown"
-	elif not minver is None:
+	elif minver is not None:
 		ver=tuple(map(int,version.split(".")))
 		if ver<minver:
 			res=False
@@ -43,8 +40,8 @@ def check_perl_version(self,minver=None):
 	return res
 @conf
 def check_perl_module(self,module):
-	cmd=self.env.PERL+['-e','use %s'%module]
-	self.start_msg('perl module %s'%module)
+	cmd = self.env.PERL + ['-e', f'use {module}']
+	self.start_msg(f'perl module {module}')
 	try:
 		r=self.cmd_and_log(cmd)
 	except Errors.WafError:

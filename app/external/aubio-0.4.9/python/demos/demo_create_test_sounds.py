@@ -7,7 +7,7 @@ from aubio import fvec, sink, float_type
 
 if __name__ == '__main__':
     if len(sys.argv) < 1:
-        print('usage: %s' % sys.argv[0])
+        print(f'usage: {sys.argv[0]}')
         sys.exit(1)
 
     samplerate = 44100
@@ -43,8 +43,9 @@ if __name__ == '__main__':
                 vec = fvec(write)
             g(vec, write)
             total_frames += write
-        outstr = "wrote {:2f}s".format(total_frames / float(samplerate))
-        outstr += " ({:d} frames".format(total_frames)
+        outstr = "wrote {:2f}s".format(
+            total_frames / float(samplerate)
+        ) + " ({:d} frames".format(total_frames)
         outstr += " at {:d}Hz)".format(g.samplerate)
         outstr += " to {:s}".format(g.uri)
         print(outstr)

@@ -56,7 +56,7 @@ while True:
         pitch = pitch_o(signal)[0]
         confidence = pitch_o.get_confidence()
 
-        print("{} / {}".format(pitch,confidence))
+        print(f"{pitch} / {confidence}")
 
         if outputsink:
             outputsink(signal, len(signal))

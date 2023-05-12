@@ -4,7 +4,7 @@ import sys
 from aubio import source, notes
 
 if len(sys.argv) < 2:
-    print("Usage: %s <filename> [samplerate]" % sys.argv[0])
+    print(f"Usage: {sys.argv[0]} <filename> [samplerate]")
     sys.exit(1)
 
 filename = sys.argv[1]

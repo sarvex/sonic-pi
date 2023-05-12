@@ -101,7 +101,8 @@ objinputsize = {
 def get_name(proto):
     name = proto.replace(' *', '* ').split()[1].split('(')[0]
     name = name.replace('*','')
-    if name == '': raise ValueError(proto + "gave empty name")
+    if name == '':
+        raise ValueError(f"{proto}gave empty name")
     return name
 
 def get_return_type(proto):
@@ -115,9 +116,7 @@ def split_type(arg):
     """ arg = 'foo *name' 
         return ['foo*', 'name'] """
     l = arg.split()
-    type_arg = {} #'type': l[0], 'name': l[1]}
-    type_arg['type'] = " ".join(l[:-1])
-    type_arg['name'] = l[-1]
+    type_arg = {'type': " ".join(l[:-1]), 'name': l[-1]}
     # fix up type / name
     if type_arg['name'].startswith('*'):
         # ['foo', '*name'] -> ['foo*', 'name']
@@ -138,9 +137,7 @@ def get_params(proto):
     """
     import re
     paramregex = re.compile('.*\((.*)\);')
-    a = paramregex.findall(proto)[0].split(', ')
-    #a = [i.replace('const ', '') for i in a]
-    return a
+    return paramregex.findall(proto)[0].split(', ')
 
 def get_input_params(proto):
     a = get_params(proto)
@@ -155,10 +152,7 @@ def get_params_types_names(proto):
     example: proto = "int main (int argc, char ** argv)"
     returns: [['int', 'argc'], ['char **','argv']]
     """
-    a = list(map(split_type, get_params(proto)))
-    #print proto, a
-    #import sys; sys.exit(1)
-    return a
+    return list(map(split_type, get_params(proto)))
 
 class MappedObject(object):
 
@@ -263,7 +257,7 @@ Py_{shortname}_new (PyTypeObject * pytype, PyObject * args, PyObject * kwds)
         out += """
     static char *kwlist[] = {{ {plist}, NULL }};""".format(plist = plist)
         argchars = "".join([pyargparse_chars[p['type']] for p in params])
-        arglist = ", ".join(["&%s" % p['name'] for p in params])
+        arglist = ", ".join([f"&{p['name']}" for p in params])
         out += """
     if (!PyArg_ParseTupleAndKeywords (args, kwds, "|{argchars}", kwlist,
               {arglist})) {{
@@ -291,7 +285,7 @@ Py_{shortname}_new (PyTypeObject * pytype, PyObject * args, PyObject * kwds)
         if p['type'] == 'char_t*':
             return self.check_valid_char(p)
         else:
-            print ("ERROR, no idea how to check %s for validity" % p['type'])
+            print(f"ERROR, no idea how to check {p['type']} for validity")
 
     def check_valid_uint(self, p):
         name = p['name']
@@ -322,7 +316,7 @@ Py_{shortname}_init (Py_{shortname} * self, PyObject * args, PyObject * kwds)
 {{
 """.format(**self.__dict__)
         new_name = get_name(self.new_proto)
-        new_params = ", ".join(["self->%s" % s['name'] for s in self.input_params])
+        new_params = ", ".join([f"self->{s['name']}" for s in self.input_params])
         out += """
   self->o = {new_name}({new_params});
 """.format(new_name = new_name, new_params = new_params)
@@ -335,10 +329,15 @@ Py_{shortname}_init (Py_{shortname} * self, PyObject * args, PyObject * kwds)
     return -1;
   }}
 """.format(paramchars = paramchars, paramvals = paramvals, **self.__dict__)
-        output_create = ""
-        for o in self.outputs:
-            output_create += """
-  self->{name} = {create_fn}({output_size});""".format(name = o['name'], create_fn = newfromtype_fn[o['type']], output_size = objoutsize[self.shortname])
+        output_create = "".join(
+            """
+  self->{name} = {create_fn}({output_size});""".format(
+                name=o['name'],
+                create_fn=newfromtype_fn[o['type']],
+                output_size=objoutsize[self.shortname],
+            )
+            for o in self.outputs
+        )
         out += """
   // TODO get internal params after actual object creation?
 """
@@ -355,8 +354,8 @@ Py_{shortname}_init (Py_{shortname} * self, PyObject * args, PyObject * kwds)
         out = """
 static PyMemberDef Py_{shortname}_members[] = {{
 """.format(**self.__dict__)
+        tmp = "  {{\"{name}\", {ttype}, offsetof (Py_{shortname}, {name}), READONLY, \"TODO documentation\"}},\n"
         for p in get_params_types_names(self.new_proto):
-            tmp = "  {{\"{name}\", {ttype}, offsetof (Py_{shortname}, {name}), READONLY, \"TODO documentation\"}},\n"
             pytype = member_types[p['type']]
             out += tmp.format(name = p['name'], ttype = pytype, shortname = self.shortname)
         out += """  {NULL}, // sentinel
@@ -392,21 +391,23 @@ Py_{shortname}_del  (Py_{shortname} * self, PyObject * unused)
         return out
 
     def gen_do(self, method = 'do'):
-        out = """
+        input_params = self.do_inputs
+        output_params = self.do_outputs
+        out = (
+            """
 // do {shortname}
 static PyObject*
 Pyaubio_{shortname}_{method}  (Py_{shortname} * self, PyObject * args)
-{{""".format(method = method, **self.__dict__)
-        input_params = self.do_inputs
-        output_params = self.do_outputs
-        #print input_params
-        #print output_params
-        out += """
+{{""".format(
+                method=method, **self.__dict__
+            )
+            + """
     PyObject *outputs;"""
+        )
         for input_param in input_params:
             out += """
     PyObject *py_{0};""".format(input_param['name'])
-        refs = ", ".join(["&py_%s" % p['name'] for p in input_params])
+        refs = ", ".join([f"&py_{p['name']}" for p in input_params])
         pyparamtypes = "".join([pyargparse_chars[p['type']] for p in input_params])
         out += """
     if (!PyArg_ParseTuple (args, "{pyparamtypes}", {refs})) {{
@@ -440,8 +441,8 @@ Pyaubio_{shortname}_{method}  (Py_{shortname} * self, PyObject * args)
     }}""".format(output_param, pytoaubio = pytoaubio_fn[output_param['type']])
         do_fn = get_name(self.do_proto)
         inputs = ", ".join(['&(self->'+p['name']+')' for p in input_params])
-        c_outputs = ", ".join(["&(self->c_%s)" % p['name'] for p in self.do_outputs])
-        outputs = ", ".join(["self->%s" % p['name'] for p in self.do_outputs])
+        c_outputs = ", ".join([f"&(self->c_{p['name']})" for p in self.do_outputs])
+        outputs = ", ".join([f"self->{p['name']}" for p in self.do_outputs])
         out += """
 
     {do_fn}(self->o, {inputs}, {c_outputs});
@@ -477,11 +478,11 @@ Pyaubio_{shortname}_{method}  (Py_{shortname} * self, PyObject * args)
             paramdecls = "".join(["""
    {0} {1};""".format(p['type'], p['name']) for p in params])
             method_name = get_name(set_param)
-            param = method_name.split('aubio_'+self.shortname+'_set_')[-1]
-            refs = ", ".join(["&%s" % p['name'] for p in params])
-            paramlist = ", ".join(["%s" % p['name'] for p in params])
+            param = method_name.split(f'aubio_{self.shortname}_set_')[-1]
+            refs = ", ".join([f"&{p['name']}" for p in params])
+            paramlist = ", ".join([f"{p['name']}" for p in params])
             if len(params):
-                paramlist = "," + paramlist
+                paramlist = f",{paramlist}"
             pyparamtypes = ''.join([pyargparse_chars[p['type']] for p in params])
             out += """
 static PyObject *
@@ -499,7 +500,7 @@ Pyaubio_{shortname}_set_{param} (Py_{shortname} *self, PyObject *args)
   }}
 """.format(pyparamtypes = pyparamtypes, refs = refs)
 
-            out += """
+                out += """
   err = aubio_{shortname}_set_{param} (self->o {paramlist});
 
   if (err > 0) {{
@@ -516,7 +517,7 @@ Pyaubio_{shortname}_set_{param} (Py_{shortname} *self, PyObject *args)
   Py_RETURN_NONE;
 }}
 """.format(param = param, refs = refs, paramdecls = paramdecls,
-        pyparamtypes = pyparamtypes, paramlist = paramlist, **self.__dict__)
+            pyparamtypes = pyparamtypes, paramlist = paramlist, **self.__dict__)
         return out
 
     def gen_get(self):
@@ -526,12 +527,11 @@ Pyaubio_{shortname}_set_{param} (Py_{shortname} *self, PyObject *args)
         for method in self.prototypes['get']:
             params = get_params_types_names(method)
             method_name = get_name(method)
-            assert len(params) == 1, \
-                "get method has more than one parameter %s" % params
-            param = method_name.split('aubio_'+self.shortname+'_get_')[-1]
+            assert len(params) == 1, f"get method has more than one parameter {params}"
+            param = method_name.split(f'aubio_{self.shortname}_get_')[-1]
             paramtype = get_return_type(method)
             ptypeconv = pyfromtype_fn[paramtype]
-            out += """
+                out += """
 static PyObject *
 Pyaubio_{shortname}_get_{param} (Py_{shortname} *self, PyObject *unused)
 {{
@@ -539,7 +539,7 @@ Pyaubio_{shortname}_get_{param} (Py_{shortname} *self, PyObject *unused)
   return (PyObject *){ptypeconv} ({param});
 }}
 """.format(param = param, ptype = paramtype, ptypeconv = ptypeconv,
-        **self.__dict__)
+            **self.__dict__)
         return out
 
     def gen_methodef(self):
@@ -547,19 +547,19 @@ Pyaubio_{shortname}_get_{param} (Py_{shortname} *self, PyObject *unused)
 static PyMethodDef Py_{shortname}_methods[] = {{""".format(**self.__dict__)
         for m in self.prototypes['set']:
             name = get_name(m)
-            shortname = name.replace('aubio_%s_' % self.shortname, '')
+            shortname = name.replace(f'aubio_{self.shortname}_', '')
             out += """
   {{"{shortname}", (PyCFunction) Py{name},
     METH_VARARGS, ""}},""".format(name = name, shortname = shortname)
         for m in self.prototypes['get']:
             name = get_name(m)
-            shortname = name.replace('aubio_%s_' % self.shortname, '')
+            shortname = name.replace(f'aubio_{self.shortname}_', '')
             out += """
   {{"{shortname}", (PyCFunction) Py{name},
     METH_NOARGS, ""}},""".format(name = name, shortname = shortname)
         for m in self.prototypes['rdo']:
             name = get_name(m)
-            shortname = name.replace('aubio_%s_' % self.shortname, '')
+            shortname = name.replace(f'aubio_{self.shortname}_', '')
             out += """
   {{"{shortname}", (PyCFunction) Py{name},
     METH_VARARGS, ""}},""".format(name = name, shortname = shortname)

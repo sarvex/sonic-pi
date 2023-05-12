@@ -90,8 +90,9 @@ def gcc_modifier_osf1V(conf):
 	v.SONAME_ST=[]
 @conf
 def gcc_modifier_platform(conf):
-	gcc_modifier_func=getattr(conf,'gcc_modifier_'+conf.env.DEST_OS,None)
-	if gcc_modifier_func:
+	if gcc_modifier_func := getattr(
+		conf, f'gcc_modifier_{conf.env.DEST_OS}', None
+	):
 		gcc_modifier_func()
 def configure(conf):
 	conf.find_gcc()

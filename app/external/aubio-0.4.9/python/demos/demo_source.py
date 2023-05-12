@@ -5,13 +5,11 @@ from aubio import source
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        print('usage: %s <inputfile> [samplerate] [hop_size]' % sys.argv[0])
+        print(f'usage: {sys.argv[0]} <inputfile> [samplerate] [hop_size]')
         sys.exit(1)
     samplerate = 0
-    hop_size = 256
     if len(sys.argv) > 2: samplerate = int(sys.argv[2])
-    if len(sys.argv) > 3: hop_size = int(sys.argv[3])
-
+    hop_size = int(sys.argv[3]) if len(sys.argv) > 3 else 256
     f = source(sys.argv[1], samplerate, hop_size)
     samplerate = f.samplerate
 
@@ -24,5 +22,5 @@ if __name__ == '__main__':
     outstr += " (%d frames in" % total_frames
     outstr += " %d blocks" % (total_frames // f.hop_size)
     outstr += " at %dHz)" % f.samplerate
-    outstr += " from " + f.uri
+    outstr += f" from {f.uri}"
     print(outstr)

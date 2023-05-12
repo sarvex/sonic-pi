@@ -4,7 +4,7 @@ import sys
 from aubio import source, pitch
 
 if len(sys.argv) < 2:
-    print("Usage: %s <filename> [samplerate]" % sys.argv[0])
+    print(f"Usage: {sys.argv[0]} <filename> [samplerate]")
     sys.exit(1)
 
 filename = sys.argv[1]
@@ -42,8 +42,6 @@ while True:
     total_frames += read
     if read < hop_s: break
 
-if 0: sys.exit(0)
-
 #print pitches
 import os.path
 from numpy import array, ma
@@ -69,7 +67,7 @@ def array_from_text_file(filename, dtype = 'float'):
         dtype = dtype)
 
 ax2 = fig.add_subplot(312, sharex = ax1)
-ground_truth = os.path.splitext(filename)[0] + '.f0.Corrected'
+ground_truth = f'{os.path.splitext(filename)[0]}.f0.Corrected'
 if os.path.isfile(ground_truth):
     ground_truth = array_from_text_file(ground_truth)
     true_freqs = ground_truth[:,2]

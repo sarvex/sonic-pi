@@ -56,7 +56,7 @@ while True:
         phas_acc = old_grain.phas
 
     #print "block_read", block_read
-    while True and (block_read > 0):
+    while block_read > 0:
         if interp_read >= block_read:
             break
         #print "`--- interp_block:", interp_block,

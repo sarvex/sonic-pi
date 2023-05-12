@@ -6,7 +6,7 @@ from waflib import Utils,Task,Options,Errors
 from waflib.TaskGen import before_method,after_method,feature
 from waflib.Tools import ccroot
 from waflib.Configure import conf
-ccroot.USELIB_VARS['cs']=set(['CSFLAGS','ASSEMBLIES','RESOURCES'])
+ccroot.USELIB_VARS['cs'] = {'CSFLAGS', 'ASSEMBLIES', 'RESOURCES'}
 ccroot.lib_patterns['csshlib']=['%s']
 @feature('cs')
 @before_method('process_source')
@@ -21,11 +21,14 @@ def apply_cs(self):
 	self.source=no_nodes
 	bintype=getattr(self,'bintype',self.gen.endswith('.dll')and'library'or'exe')
 	self.cs_task=tsk=self.create_task('mcs',cs_nodes,self.path.find_or_declare(self.gen))
-	tsk.env.CSTYPE='/target:%s'%bintype
-	tsk.env.OUT='/out:%s'%tsk.outputs[0].abspath()
-	self.env.append_value('CSFLAGS','/platform:%s'%getattr(self,'platform','anycpu'))
-	inst_to=getattr(self,'install_path',bintype=='exe'and'${BINDIR}'or'${LIBDIR}')
-	if inst_to:
+	tsk.env.CSTYPE = f'/target:{bintype}'
+	tsk.env.OUT = f'/out:{tsk.outputs[0].abspath()}'
+	self.env.append_value(
+		'CSFLAGS', f"/platform:{getattr(self, 'platform', 'anycpu')}"
+	)
+	if inst_to := getattr(
+		self, 'install_path', bintype == 'exe' and '${BINDIR}' or '${LIBDIR}'
+	):
 		mod=getattr(self,'chmod',bintype=='exe'and Utils.O755 or Utils.O644)
 		self.install_task=self.add_install_files(install_to=inst_to,install_from=self.cs_task.outputs[:],chmod=mod)
 @feature('cs')
@@ -37,7 +40,7 @@ def use_cs(self):
 		try:
 			y=get(x)
 		except Errors.WafError:
-			self.env.append_value('CSFLAGS','/reference:%s'%x)
+			self.env.append_value('CSFLAGS', f'/reference:{x}')
 			continue
 		y.post()
 		tsk=getattr(y,'cs_task',None)or getattr(y,'link_task',None)
@@ -45,7 +48,7 @@ def use_cs(self):
 			self.bld.fatal('cs task has no link task for use %r'%self)
 		self.cs_task.dep_nodes.extend(tsk.outputs)
 		self.cs_task.set_run_after(tsk)
-		self.env.append_value('CSFLAGS','/reference:%s'%tsk.outputs[0].abspath())
+		self.env.append_value('CSFLAGS', f'/reference:{tsk.outputs[0].abspath()}')
 @feature('cs')
 @after_method('apply_cs','use_cs')
 def debug_cs(self):
@@ -54,16 +57,16 @@ def debug_cs(self):
 		return
 	node=self.cs_task.outputs[0]
 	if self.env.CS_NAME=='mono':
-		out=node.parent.find_or_declare(node.name+'.mdb')
+		out = node.parent.find_or_declare(f'{node.name}.mdb')
 	else:
 		out=node.change_ext('.pdb')
 	self.cs_task.outputs.append(out)
 	if getattr(self,'install_task',None):
 		self.pdb_install_task=self.add_install_files(install_to=self.install_task.install_to,install_from=out)
-	if csdebug=='pdbonly':
-		val=['/debug+','/debug:pdbonly']
-	elif csdebug=='full':
+	if csdebug == 'full':
 		val=['/debug+','/debug:full']
+	elif csdebug == 'pdbonly':
+		val=['/debug+','/debug:pdbonly']
 	else:
 		val=['/debug-']
 	self.env.append_value('CSFLAGS',val)
@@ -78,7 +81,7 @@ def doc_cs(self):
 	self.cs_task.outputs.append(out)
 	if getattr(self,'install_task',None):
 		self.doc_install_task=self.add_install_files(install_to=self.install_task.install_to,install_from=out)
-	self.env.append_value('CSFLAGS','/doc:%s'%out.abspath())
+	self.env.append_value('CSFLAGS', f'/doc:{out.abspath()}')
 class mcs(Task.Task):
 	color='YELLOW'
 	run_str='${MCS} ${CSTYPE} ${CSFLAGS} ${ASS_ST:ASSEMBLIES} ${RES_ST:RESOURCES} ${OUT} ${SRC}'
@@ -92,14 +95,13 @@ class mcs(Task.Task):
 				infile.append(self.quote_flag(x))
 		return(inline,infile)
 def configure(conf):
-	csc=getattr(Options.options,'cscbinary',None)
-	if csc:
+	if csc := getattr(Options.options, 'cscbinary', None):
 		conf.env.MCS=csc
 	conf.find_program(['csc','mcs','gmcs'],var='MCS')
 	conf.env.ASS_ST='/r:%s'
 	conf.env.RES_ST='/resource:%s'
 	conf.env.CS_NAME='csc'
-	if str(conf.env.MCS).lower().find('mcs')>-1:
+	if 'mcs' in str(conf.env.MCS).lower():
 		conf.env.CS_NAME='mono'
 def options(opt):
 	opt.add_option('--with-csc-binary',type='string',dest='cscbinary')

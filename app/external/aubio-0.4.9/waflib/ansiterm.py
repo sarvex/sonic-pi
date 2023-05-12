@@ -182,8 +182,7 @@ else:
 				if self._isatty:
 					for param,cmd,txt in self.ansi_tokens.findall(text):
 						if cmd:
-							cmd_func=self.ansi_command_table.get(cmd)
-							if cmd_func:
+							if cmd_func := self.ansi_command_table.get(cmd):
 								cmd_func(self,param)
 						else:
 							self.writeconsole(txt)
